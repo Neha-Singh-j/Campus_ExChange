@@ -2,24 +2,24 @@ import { useState, useEffect } from 'react';
 import api from '../services/api';
 import { 
   GraduationCap, 
-  Sparkles, 
-  Clock, 
-  TrendingDown, 
-  CheckCircle2, 
+  // Sparkles, 
+  // Clock, 
+  // TrendingDown, 
+  // CheckCircle2, 
   ShieldCheck, 
   Truck, 
-  Package, 
+  // Package, 
   Lock, 
-  MapPin, 
-  ArrowRight,
-  Boxes,
-  Layers,
-  Heart
+  MapPin 
+  // ArrowRight,
+  // Boxes,
+  // Layers,
+  // Heart
 } from 'lucide-react';
 import { MOVE_OUT_BUNDLES } from '../data/mockData';
 
 export default function MoveOutBundlesPage({ onTriggerEscrow, onOpenPostModal }) {
-  const [selectedCategory, setSelectedCategory] = useState('All');
+  // const [selectedCategory, setSelectedCategory] = useState('All');
   const [timeLeft, setTimeLeft] = useState({
     days: 12,
     hours: 8,
