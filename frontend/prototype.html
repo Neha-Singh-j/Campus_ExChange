@@ -1,0 +1,2489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CampusZon — UC Berkeley Verified Student Marketplace</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400..800&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════════════════════════
+   CUSTOM PROPERTIES
+═══════════════════════════════════════════════════════════════ */
+:root {
+  --u: min(calc(100vw / 1440), 1.333px);
+  --canvas: #f6f8fe;
+  --hero-top: #e9eefc;
+  --card: #fff;
+  --border: #e6e9f5;
+  --blue: #0f1fa8;
+  --blue-hover: #0a1688;
+  --navy: #0b1560;
+  --body-text: #1b2340;
+  --muted: #6b7392;
+  --hairline: #e6e9f5;
+  --mint-bg: #6ee7b7;
+  --mint-text: #065f46;
+  --red: #ef4444;
+  --amber: #f59e0b;
+  --amber-bg: #fff3e0;
+  --slate: #14233a;
+  --badge-blue: #1d3fbf;
+  --badge-green: #0c6b3e;
+  --badge-brown: #8a3b12;
+  --shadow: 0 calc(1*var(--u)) calc(2*var(--u)) rgba(15,23,60,.06),
+            0 calc(8*var(--u)) calc(24*var(--u)) rgba(15,23,60,.06);
+  --shadow-hover: 0 calc(4*var(--u)) calc(8*var(--u)) rgba(15,23,60,.1),
+                  0 calc(16*var(--u)) calc(40*var(--u)) rgba(15,23,60,.12);
+  --r-card: calc(16*var(--u));
+  --r-panel: calc(24*var(--u));
+  --r-pill: 999px;
+  --r-input: calc(12*var(--u));
+}
+@media (max-width: 760px) {
+  :root { --u: calc(100vw / 390); }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   RESET & BASE
+═══════════════════════════════════════════════════════════════ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  font-family:'Inter',sans-serif;
+  background:var(--canvas);
+  color:var(--body-text);
+  font-size:calc(13*var(--u));
+  font-weight:500;
+  overflow-x:hidden;
+  line-height:1.5;
+}
+img{display:block;max-width:100%}
+a{text-decoration:none;color:inherit}
+button{font-family:inherit;cursor:pointer;border:none;background:none}
+select,input{font-family:inherit}
+ul{list-style:none}
+
+/* ═══════════════════════════════════════════════════════════════
+   LAYOUT SHELL
+═══════════════════════════════════════════════════════════════ */
+.content-col{
+  max-width:calc(1240*var(--u));
+  margin:0 auto;
+  padding:0 calc(20*var(--u));
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   HEADER
+═══════════════════════════════════════════════════════════════ */
+.header{
+  position:sticky;
+  top:0;
+  z-index:200;
+  height:calc(64*var(--u));
+  background:rgba(255,255,255,0.92);
+  backdrop-filter:blur(12px);
+  -webkit-backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--border);
+  transition:box-shadow .2s;
+}
+.header.scrolled{box-shadow:var(--shadow)}
+.header-inner{
+  max-width:calc(1240*var(--u));
+  margin:0 auto;
+  padding:0 calc(20*var(--u));
+  display:flex;
+  align-items:center;
+  gap:calc(16*var(--u));
+  height:100%;
+}
+.logo-wrap{display:flex;align-items:center;gap:calc(8*var(--u));flex-shrink:0;text-decoration:none}
+.logo-mark{width:calc(28*var(--u));height:calc(28*var(--u));flex-shrink:0}
+.logo-word{font-size:calc(16*var(--u));font-weight:800;color:var(--navy);letter-spacing:-0.02em}
+.campus-switcher{
+  display:flex;align-items:center;gap:calc(6*var(--u));
+  background:#eef1fc;border:1px solid #d0d8f8;border-radius:var(--r-pill);
+  padding:calc(5*var(--u)) calc(10*var(--u));
+  font-size:calc(11.5*var(--u));font-weight:600;color:var(--blue);
+  cursor:pointer;white-space:nowrap;flex-shrink:0;
+}
+.campus-switcher svg{width:calc(14*var(--u));height:calc(14*var(--u))}
+
+/* NAV */
+.nav-links{
+  display:flex;align-items:center;gap:calc(2*var(--u));
+  flex:1;overflow:hidden;
+}
+.nav-link{
+  display:flex;align-items:center;gap:calc(4*var(--u));
+  padding:calc(6*var(--u)) calc(10*var(--u));
+  font-size:calc(12.5*var(--u));font-weight:600;color:var(--body-text);
+  border-radius:var(--r-pill);white-space:nowrap;
+  transition:background .15s,color .15s;
+  position:relative;
+}
+.nav-link::after{
+  content:'';position:absolute;bottom:calc(2*var(--u));left:calc(10*var(--u));
+  right:calc(10*var(--u));height:calc(2*var(--u));
+  background:var(--blue);border-radius:1px;
+  transform:scaleX(0);transform-origin:left;
+  transition:transform .2s;
+}
+.nav-link:hover::after{transform:scaleX(1)}
+.nav-link:hover{color:var(--blue)}
+.nav-link.active{background:var(--blue);color:#fff}
+.nav-link.active::after{display:none}
+.new-tag{
+  font-size:calc(9*var(--u));font-weight:700;text-transform:uppercase;
+  background:var(--amber-bg);color:var(--amber);
+  padding:calc(2*var(--u)) calc(5*var(--u));border-radius:var(--r-pill);
+  border:1px solid #f8d99a;
+}
+.header-right{display:flex;align-items:center;gap:calc(10*var(--u));flex-shrink:0}
+.btn-post{
+  display:flex;align-items:center;gap:calc(5*var(--u));
+  background:var(--blue);color:#fff;
+  padding:calc(8*var(--u)) calc(14*var(--u));
+  border-radius:var(--r-pill);
+  font-size:calc(12*var(--u));font-weight:700;
+  transition:background .15s,transform .15s;
+  white-space:nowrap;
+}
+.btn-post:hover{background:var(--blue-hover);transform:translateY(calc(-1*var(--u)))}
+.bell-btn{
+  position:relative;width:calc(36*var(--u));height:calc(36*var(--u));
+  display:flex;align-items:center;justify-content:center;
+  border-radius:50%;background:#f0f2fc;
+  color:var(--muted);cursor:pointer;
+}
+.bell-btn svg{width:calc(18*var(--u));height:calc(18*var(--u))}
+.bell-dot{
+  position:absolute;top:calc(6*var(--u));right:calc(6*var(--u));
+  width:calc(7*var(--u));height:calc(7*var(--u));
+  background:var(--red);border-radius:50%;border:calc(1.5*var(--u)) solid #fff;
+}
+.profile-wrap{position:relative;cursor:pointer}
+.profile-avatar{
+  width:calc(32*var(--u));height:calc(32*var(--u));border-radius:50%;
+  background:linear-gradient(135deg,#4a6080,#2d4060);
+  display:flex;align-items:center;justify-content:center;
+  font-size:calc(11*var(--u));font-weight:700;color:#fff;
+}
+.verified-badge-sm{
+  position:absolute;bottom:calc(-1*var(--u));right:calc(-1*var(--u));
+  width:calc(12*var(--u));height:calc(12*var(--u));
+  background:#22c55e;border-radius:50%;border:calc(1.5*var(--u)) solid #fff;
+  display:flex;align-items:center;justify-content:center;
+}
+.verified-badge-sm svg{width:calc(7*var(--u));height:calc(7*var(--u));color:#fff}
+
+/* Hamburger (mobile) */
+.hamburger{
+  display:none;width:calc(36*var(--u));height:calc(36*var(--u));
+  align-items:center;justify-content:center;
+  border-radius:50%;background:#f0f2fc;cursor:pointer;
+}
+.hamburger svg{width:calc(20*var(--u));height:calc(20*var(--u));color:var(--navy)}
+.mobile-menu{
+  display:none;position:fixed;inset:0;background:rgba(11,21,96,0.6);z-index:300;
+}
+.mobile-menu.open{display:block}
+.mobile-sheet{
+  position:absolute;top:0;right:0;width:min(calc(300*var(--u)),85vw);
+  height:100vh;background:#fff;padding:calc(24*var(--u));
+  overflow-y:auto;
+}
+.mobile-sheet .nav-link{display:block;padding:calc(12*var(--u)) calc(8*var(--u));font-size:calc(15*var(--u))}
+
+/* ═══════════════════════════════════════════════════════════════
+   VIEWS
+═══════════════════════════════════════════════════════════════ */
+.view{display:none;min-height:calc(100vh - calc(64*var(--u)) - calc(260*var(--u)))}
+.view.active{display:block}
+
+/* ═══════════════════════════════════════════════════════════════
+   TYPOGRAPHY
+═══════════════════════════════════════════════════════════════ */
+h1{
+  font-size:calc(38*var(--u));font-weight:800;
+  line-height:1.1;letter-spacing:-0.03em;color:var(--navy);
+}
+h2{font-size:calc(28*var(--u));font-weight:800;line-height:1.15;letter-spacing:-0.025em;color:var(--navy)}
+h3{font-size:calc(20*var(--u));font-weight:700;color:var(--navy)}
+.micro-label{
+  font-size:calc(9.5*var(--u));font-weight:700;text-transform:uppercase;
+  letter-spacing:0.06em;color:var(--muted);
+}
+.card-title{font-size:calc(15*var(--u));font-weight:700;color:var(--navy);line-height:1.3}
+.price{font-size:calc(20*var(--u));font-weight:800;color:var(--navy)}
+.price-sm{font-size:calc(15*var(--u));font-weight:800;color:var(--navy)}
+.struck{font-size:calc(10.5*var(--u));font-weight:500;color:var(--muted);text-decoration:line-through}
+
+/* ═══════════════════════════════════════════════════════════════
+   PILLS & BADGES
+═══════════════════════════════════════════════════════════════ */
+.pill{
+  display:inline-flex;align-items:center;gap:calc(5*var(--u));
+  padding:calc(4*var(--u)) calc(10*var(--u));
+  border-radius:var(--r-pill);font-size:calc(10.5*var(--u));font-weight:700;
+}
+.pill-mint{background:var(--mint-bg);color:var(--mint-text)}
+.pill-blue{background:#eef1fc;color:var(--blue);border:1px solid #d0d8f8}
+.pill-navy{background:var(--navy);color:#fff}
+.pill-green{background:#dcfce7;color:#15803d}
+.pill-amber{background:var(--amber-bg);color:var(--amber)}
+.pill-red{background:#fee2e2;color:var(--red)}
+.pill-grey{background:#f1f3fa;color:var(--muted);border:1px solid var(--border)}
+.pill-dark{background:rgba(255,255,255,0.15);color:#fff;border:1px solid rgba(255,255,255,0.3)}
+.badge-top{
+  position:absolute;top:calc(10*var(--u));left:calc(10*var(--u));
+  font-size:calc(8.5*var(--u));font-weight:800;text-transform:uppercase;letter-spacing:0.07em;
+  padding:calc(3*var(--u)) calc(8*var(--u));border-radius:var(--r-pill);
+  color:#fff;z-index:2;
+}
+.badge-course{background:var(--badge-blue)}
+.badge-dorm{background:var(--badge-green)}
+.badge-high{background:var(--badge-brown)}
+.badge-tech{background:#0f1fa8}
+.badge-move{background:var(--slate)}
+.badge-essential{background:var(--badge-green)}
+.badge-merch{background:var(--navy)}
+.badge-quick{background:var(--red)}
+
+/* ═══════════════════════════════════════════════════════════════
+   BUTTONS
+═══════════════════════════════════════════════════════════════ */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:calc(6*var(--u));
+  padding:calc(10*var(--u)) calc(20*var(--u));
+  border-radius:var(--r-pill);font-size:calc(12.5*var(--u));font-weight:700;
+  transition:background .15s,transform .15s,box-shadow .15s;cursor:pointer;
+}
+.btn:hover{transform:translateY(calc(-1*var(--u)))}
+.btn-primary{background:var(--blue);color:#fff;border:none}
+.btn-primary:hover{background:var(--blue-hover)}
+.btn-ghost{background:transparent;color:#fff;border:calc(1.5*var(--u)) solid rgba(255,255,255,0.6)}
+.btn-ghost:hover{background:rgba(255,255,255,0.1)}
+.btn-ghost-dark{background:transparent;color:var(--blue);border:calc(1.5*var(--u)) solid var(--border)}
+.btn-ghost-dark:hover{border-color:var(--blue)}
+.btn-success{background:#22c55e;color:#fff;border:none}
+.btn-success:hover{background:#16a34a}
+.btn-dark{background:var(--slate);color:#fff;border:none;width:100%}
+.btn-dark:hover{background:#1e3050}
+.btn-sm{padding:calc(6*var(--u)) calc(12*var(--u));font-size:calc(11*var(--u))}
+.btn-full{width:100%}
+.btn-amber-border{background:transparent;color:var(--amber);border:calc(2*var(--u)) solid var(--amber)}
+.btn-amber-border:hover{background:var(--amber-bg)}
+
+/* ═══════════════════════════════════════════════════════════════
+   CARDS
+═══════════════════════════════════════════════════════════════ */
+.card{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:var(--r-card);box-shadow:var(--shadow);
+  overflow:hidden;
+}
+.card:hover{box-shadow:var(--shadow-hover)}
+
+/* ═══════════════════════════════════════════════════════════════
+   AVATAR
+═══════════════════════════════════════════════════════════════ */
+.avatar{
+  width:calc(28*var(--u));height:calc(28*var(--u));border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:calc(10*var(--u));font-weight:700;color:#fff;
+  flex-shrink:0;position:relative;
+}
+.avatar .dot{
+  position:absolute;bottom:0;right:0;
+  width:calc(7*var(--u));height:calc(7*var(--u));
+  background:#22c55e;border-radius:50%;border:calc(1.5*var(--u)) solid #fff;
+}
+.avatar-ml{background:#8a6540}
+.avatar-dk{background:#1a3a6b}
+.avatar-st{background:#065f46}
+.avatar-ar{background:#1d3fbf}
+.avatar-jm{background:#2d6a4f}
+.avatar-cb{background:#8a3b12}
+.avatar-mw{background:#1a2545}
+.avatar-ep{background:#6b4c8a}
+
+/* ═══════════════════════════════════════════════════════════════
+   FADE-UP ANIMATION
+═══════════════════════════════════════════════════════════════ */
+.fade-up{opacity:0;transform:translateY(calc(18*var(--u)));transition:opacity .5s,transform .5s}
+.fade-up.visible{opacity:1;transform:translateY(0)}
+@media(prefers-reduced-motion:reduce){
+  .fade-up{opacity:1;transform:none;transition:none}
+  *{transition:none!important;animation:none!important}
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SECTION SPACING
+═══════════════════════════════════════════════════════════════ */
+.section{padding:calc(48*var(--u)) 0}
+.section-sm{padding:calc(32*var(--u)) 0}
+
+/* ═══════════════════════════════════════════════════════════════
+   HERO
+═══════════════════════════════════════════════════════════════ */
+.hero{
+  background:linear-gradient(160deg,var(--hero-top) 0%,var(--canvas) 65%);
+  padding:calc(60*var(--u)) 0 calc(48*var(--u));
+}
+.hero-inner{
+  display:grid;grid-template-columns:1fr auto;
+  gap:calc(40*var(--u));align-items:start;
+}
+.hero-h1-wrap{overflow:hidden}
+.hero-p{font-size:calc(13*var(--u));color:var(--muted);line-height:1.6;margin-top:calc(16*var(--u));max-width:calc(480*var(--u))}
+.stat-cards-row{display:flex;gap:calc(12*var(--u));margin-top:calc(28*var(--u));flex-wrap:wrap}
+.stat-card{
+  background:var(--card);border:1px solid var(--border);border-radius:var(--r-card);
+  padding:calc(16*var(--u)) calc(20*var(--u));box-shadow:var(--shadow);min-width:calc(140*var(--u));
+}
+.stat-card .stat-num{font-size:calc(24*var(--u));font-weight:800;color:var(--navy);letter-spacing:-0.02em}
+.stat-card .stat-num.green{color:#16a34a}
+.stat-card .stat-label{font-size:calc(9*var(--u));font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);margin-top:calc(2*var(--u))}
+
+/* Escrow card */
+.escrow-card{
+  background:var(--card);border:1px solid var(--border);border-radius:var(--r-panel);
+  box-shadow:var(--shadow);padding:calc(20*var(--u));width:calc(280*var(--u));
+  flex-shrink:0;
+}
+.escrow-shield{
+  width:calc(44*var(--u));height:calc(44*var(--u));border-radius:calc(12*var(--u));
+  background:#eef1fc;display:flex;align-items:center;justify-content:center;margin-bottom:calc(12*var(--u));
+}
+.escrow-shield svg{width:calc(24*var(--u));height:calc(24*var(--u));color:var(--blue)}
+.escrow-title{font-size:calc(14*var(--u));font-weight:800;color:var(--navy);margin-bottom:calc(4*var(--u))}
+.escrow-sub{font-size:calc(11.5*var(--u));color:var(--muted);margin-bottom:calc(10*var(--u))}
+.live-feed{
+  background:#f0f2fc;border-radius:calc(10*var(--u));
+  padding:calc(10*var(--u)) calc(12*var(--u));margin-top:calc(10*var(--u));
+  font-size:calc(11*var(--u));color:var(--body-text);min-height:calc(36*var(--u));
+  overflow:hidden;
+}
+.live-feed-line{transition:opacity .3s,transform .3s}
+
+/* ═══════════════════════════════════════════════════════════════
+   CATEGORY BAR
+═══════════════════════════════════════════════════════════════ */
+.category-bar-wrap{
+  overflow-x:auto;padding-bottom:calc(4*var(--u));
+  scrollbar-width:none;-webkit-overflow-scrolling:touch;
+}
+.category-bar-wrap::-webkit-scrollbar{display:none}
+.category-bar{display:flex;gap:calc(8*var(--u));padding:calc(16*var(--u)) 0}
+.cat-pill{
+  padding:calc(8*var(--u)) calc(16*var(--u));
+  border-radius:var(--r-pill);font-size:calc(12*var(--u));font-weight:600;
+  border:1.5px solid var(--border);background:var(--card);color:var(--body-text);
+  cursor:pointer;white-space:nowrap;transition:all .15s;
+}
+.cat-pill:hover{border-color:var(--blue);color:var(--blue)}
+.cat-pill.active{background:var(--blue);color:#fff;border-color:var(--blue)}
+
+/* ═══════════════════════════════════════════════════════════════
+   FILTER BAR
+═══════════════════════════════════════════════════════════════ */
+.filter-bar{
+  background:var(--card);border:1px solid var(--border);border-radius:var(--r-card);
+  padding:calc(14*var(--u)) calc(20*var(--u));
+  display:flex;align-items:center;gap:calc(16*var(--u));
+  flex-wrap:wrap;margin-bottom:calc(24*var(--u));
+  box-shadow:var(--shadow);
+}
+.filter-chip{
+  display:flex;align-items:center;gap:calc(6*var(--u));
+  padding:calc(5*var(--u)) calc(10*var(--u));
+  border-radius:var(--r-pill);font-size:calc(11.5*var(--u));font-weight:600;
+  background:#dcfce7;color:#15803d;border:1.5px solid #bbf7d0;
+}
+.filter-select{
+  border:1.5px solid var(--border);border-radius:var(--r-input);
+  padding:calc(5*var(--u)) calc(10*var(--u));
+  font-size:calc(11.5*var(--u));font-weight:500;color:var(--body-text);
+  background:var(--card);cursor:pointer;
+}
+.filter-label{font-size:calc(11.5*var(--u));color:var(--muted);margin-left:auto}
+.filter-check{
+  display:flex;align-items:center;gap:calc(6*var(--u));
+  font-size:calc(11.5*var(--u));font-weight:600;cursor:pointer;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   LISTING CARDS GRID
+═══════════════════════════════════════════════════════════════ */
+.listing-grid{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:calc(24*var(--u));
+  margin-bottom:calc(48*var(--u));
+}
+.listing-card{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:var(--r-card);box-shadow:var(--shadow);
+  overflow:hidden;transition:transform .25s,box-shadow .25s;
+  display:flex;flex-direction:column;
+}
+.listing-card:hover{
+  transform:translateY(calc(-4*var(--u)));
+  box-shadow:var(--shadow-hover);
+}
+.listing-card:hover .card-photo img{transform:scale(1.04)}
+.card-photo{
+  position:relative;aspect-ratio:4/3;overflow:hidden;flex-shrink:0;
+}
+.card-photo img{
+  width:100%;height:100%;object-fit:cover;
+  transition:transform .4s;
+}
+.heart-btn{
+  position:absolute;top:calc(10*var(--u));right:calc(10*var(--u));
+  width:calc(30*var(--u));height:calc(30*var(--u));
+  background:rgba(255,255,255,0.95);border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;z-index:2;border:none;
+  transition:transform .25s;
+}
+.heart-btn:hover{transform:scale(1.15)}
+.heart-btn svg{width:calc(14*var(--u));height:calc(14*var(--u));transition:color .2s,fill .2s}
+.heart-btn.liked svg{fill:var(--red);color:var(--red)}
+.frosted-tag{
+  position:absolute;bottom:calc(10*var(--u));left:calc(10*var(--u));
+  background:rgba(255,255,255,0.88);backdrop-filter:blur(6px);
+  border-radius:var(--r-pill);padding:calc(3*var(--u)) calc(8*var(--u));
+  font-size:calc(9.5*var(--u));font-weight:700;color:var(--body-text);
+}
+.card-body{padding:calc(14*var(--u)) calc(14*var(--u)) calc(12*var(--u));display:flex;flex-direction:column;flex:1}
+.price-row{display:flex;align-items:baseline;gap:calc(8*var(--u));margin-bottom:calc(6*var(--u));flex-wrap:wrap}
+.location-pill{
+  display:inline-flex;align-items:center;gap:calc(4*var(--u));
+  background:#f1f3fa;border-radius:var(--r-pill);
+  padding:calc(3*var(--u)) calc(8*var(--u));
+  font-size:calc(10.5*var(--u));color:var(--muted);font-weight:500;
+  margin-top:calc(6*var(--u));
+}
+.location-pill svg{width:calc(10*var(--u));height:calc(10*var(--u))}
+.card-hr{border:none;border-top:1px solid var(--hairline);margin:calc(10*var(--u)) 0}
+.seller-row{display:flex;align-items:center;gap:calc(8*var(--u))}
+.seller-info{flex:1;min-width:0}
+.seller-name{font-size:calc(11.5*var(--u));font-weight:700;color:var(--body-text)}
+.seller-sub{font-size:calc(10*var(--u));color:var(--muted)}
+.chat-btn{
+  width:calc(30*var(--u));height:calc(30*var(--u));border-radius:50%;
+  background:var(--blue);display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;cursor:pointer;transition:transform .2s;
+}
+.chat-btn:hover{transform:translateY(calc(-2*var(--u)))}
+.chat-btn svg{width:calc(13*var(--u));height:calc(13*var(--u));color:#fff}
+
+/* ═══════════════════════════════════════════════════════════════
+   SAFETY BANNER
+═══════════════════════════════════════════════════════════════ */
+.safety-banner{
+  background:linear-gradient(100deg,#0b1fa8,#1f3fcf);
+  border-radius:var(--r-panel);padding:calc(36*var(--u)) calc(48*var(--u));
+  display:flex;align-items:center;gap:calc(32*var(--u));
+  position:relative;overflow:hidden;margin-bottom:calc(48*var(--u));
+}
+.safety-banner-text{flex:1;z-index:1}
+.safety-banner h2{color:#fff;font-size:calc(26*var(--u))}
+.safety-banner p{color:rgba(255,255,255,0.8);font-size:calc(12.5*var(--u));margin-top:calc(10*var(--u));max-width:calc(520*var(--u))}
+.safety-banner-btns{display:flex;gap:calc(12*var(--u));margin-top:calc(20*var(--u))}
+.shield-watermark{
+  position:absolute;right:calc(-20*var(--u));top:50%;transform:translateY(-50%);
+  opacity:0.07;pointer-events:none;
+}
+.shield-watermark svg{width:calc(220*var(--u));height:calc(220*var(--u));color:#fff}
+
+/* ═══════════════════════════════════════════════════════════════
+   BUNDLES VIEW
+═══════════════════════════════════════════════════════════════ */
+.bundles-hero{
+  background:linear-gradient(160deg,#fef9f0 0%,var(--canvas) 70%);
+  padding:calc(48*var(--u)) 0 calc(40*var(--u));
+}
+.bundles-hero-inner{display:grid;grid-template-columns:1fr calc(300*var(--u));gap:calc(40*var(--u));align-items:start}
+.countdown-row{display:flex;align-items:center;gap:calc(16*var(--u));margin-top:calc(24*var(--u));flex-wrap:wrap}
+.countdown-label{font-size:calc(9.5*var(--u));font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted)}
+.countdown-tiles{display:flex;align-items:center;gap:calc(6*var(--u))}
+.countdown-tile{
+  background:var(--slate);color:#fff;border-radius:calc(10*var(--u));
+  padding:calc(10*var(--u)) calc(14*var(--u));
+  font-size:calc(22*var(--u));font-weight:800;min-width:calc(52*var(--u));
+  text-align:center;font-variant-numeric:tabular-nums;
+}
+.countdown-sep{color:var(--slate);font-size:calc(22*var(--u));font-weight:800}
+.bundle-stats{display:flex;gap:calc(24*var(--u));margin-top:calc(20*var(--u))}
+.bundle-stat{font-size:calc(13*var(--u));color:var(--muted)}
+.bundle-stat strong{display:block;font-size:calc(20*var(--u));font-weight:800;color:var(--navy)}
+.dark-card{background:var(--slate);border-radius:var(--r-panel);padding:calc(20*var(--u));color:#fff}
+.dark-card-title{font-size:calc(14*var(--u));font-weight:800;color:#fff;margin-bottom:calc(4*var(--u))}
+.dark-card-sub{font-size:calc(11.5*var(--u));color:rgba(255,255,255,0.7)}
+.photo-card{
+  background:linear-gradient(135deg,#4a6080,#2d4060);border-radius:var(--r-card);
+  padding:calc(16*var(--u));margin-top:calc(12*var(--u));aspect-ratio:16/9;
+  display:flex;flex-direction:column;justify-content:flex-end;
+}
+.photo-card-label{font-size:calc(9*var(--u));font-weight:800;text-transform:uppercase;letter-spacing:0.07em;color:rgba(255,255,255,0.7)}
+.photo-card-title{font-size:calc(13*var(--u));font-weight:700;color:#fff;margin-top:calc(4*var(--u))}
+
+/* Bundle cards */
+.bundle-grid{
+  display:grid;grid-template-columns:repeat(3,1fr);
+  gap:calc(24*var(--u));margin:calc(24*var(--u)) 0 calc(48*var(--u));
+}
+.bundle-card{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:var(--r-card);overflow:hidden;
+  box-shadow:var(--shadow);
+  transition:transform .25s,box-shadow .25s;
+  display:flex;flex-direction:column;
+}
+.bundle-card:hover{transform:translateY(calc(-4*var(--u)));box-shadow:var(--shadow-hover)}
+.bundle-card:hover .card-photo img{transform:scale(1.04)}
+.off-tag{
+  position:absolute;top:calc(10*var(--u));right:calc(10*var(--u));
+  background:#b91c1c;color:#fff;
+  font-size:calc(9*var(--u));font-weight:800;text-transform:uppercase;letter-spacing:0.06em;
+  padding:calc(3*var(--u)) calc(8*var(--u));border-radius:var(--r-pill);z-index:2;
+}
+.bundle-body{padding:calc(14*var(--u));flex:1;display:flex;flex-direction:column}
+.bundle-seller-row{display:flex;align-items:center;gap:calc(8*var(--u));margin-bottom:calc(10*var(--u))}
+.bundle-items{margin-top:calc(8*var(--u))}
+.bundle-items-label{font-size:calc(9*var(--u));font-weight:800;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);margin-bottom:calc(6*var(--u))}
+.bundle-items ul{padding-left:calc(14*var(--u));display:flex;flex-direction:column;gap:calc(2*var(--u))}
+.bundle-items ul li{font-size:calc(11*var(--u));color:var(--body-text)}
+.bundle-note{font-style:italic;font-size:calc(10.5*var(--u));color:var(--muted);margin-top:calc(10*var(--u));line-height:1.4}
+.bundle-price-row{display:flex;align-items:baseline;gap:calc(8*var(--u));margin-top:calc(10*var(--u));margin-bottom:calc(10*var(--u))}
+.save-amber{color:var(--amber);font-weight:700;font-size:calc(11.5*var(--u))}
+
+/* Bundle explainer */
+.explainer-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:calc(24*var(--u));margin-top:calc(24*var(--u))}
+.explainer-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r-card);padding:calc(24*var(--u));box-shadow:var(--shadow)}
+.explainer-icon{width:calc(44*var(--u));height:calc(44*var(--u));border-radius:calc(12*var(--u));background:#eef1fc;display:flex;align-items:center;justify-content:center;margin-bottom:calc(12*var(--u))}
+.explainer-icon svg{width:calc(22*var(--u));height:calc(22*var(--u));color:var(--blue)}
+.explainer-footnote{font-size:calc(10.5*var(--u));color:var(--mint-text);margin-top:calc(8*var(--u))}
+
+/* CTA Band */
+.cta-band{background:var(--slate);border-radius:var(--r-panel);padding:calc(36*var(--u)) calc(48*var(--u));display:flex;gap:calc(40*var(--u));align-items:center;margin-bottom:calc(48*var(--u))}
+.cta-band h2{color:#fff}
+.cta-band p{color:rgba(255,255,255,0.75);font-size:calc(12.5*var(--u));margin-top:calc(8*var(--u))}
+.cta-checks{display:flex;flex-direction:column;gap:calc(8*var(--u));margin-top:calc(14*var(--u))}
+.cta-check{display:flex;align-items:center;gap:calc(8*var(--u));font-size:calc(12*var(--u));color:var(--mint-bg)}
+.cta-right{flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:calc(10*var(--u))}
+
+/* ═══════════════════════════════════════════════════════════════
+   TABS
+═══════════════════════════════════════════════════════════════ */
+.tab-bar{display:flex;gap:calc(4*var(--u));border-bottom:1.5px solid var(--border);margin-bottom:calc(20*var(--u));overflow-x:auto;scrollbar-width:none}
+.tab-bar::-webkit-scrollbar{display:none}
+.tab-btn{
+  padding:calc(10*var(--u)) calc(16*var(--u));
+  font-size:calc(12*var(--u));font-weight:600;color:var(--muted);
+  border-bottom:calc(2.5*var(--u)) solid transparent;margin-bottom:calc(-1.5*var(--u));
+  cursor:pointer;white-space:nowrap;transition:color .15s,border-color .15s;background:none;border-left:none;border-right:none;border-top:none;
+}
+.tab-btn.active{color:var(--blue);border-bottom-color:var(--blue)}
+.tab-btn:hover{color:var(--body-text)}
+
+/* ═══════════════════════════════════════════════════════════════
+   VERIFY VIEW
+═══════════════════════════════════════════════════════════════ */
+.protocol-bar{
+  background:#f0f4ff;border-bottom:1px solid var(--border);
+  padding:calc(10*var(--u)) 0;font-size:calc(10.5*var(--u));
+}
+.protocol-bar-inner{
+  max-width:calc(1240*var(--u));margin:0 auto;padding:0 calc(20*var(--u));
+  display:flex;align-items:center;justify-content:space-between;gap:calc(12*var(--u));
+}
+.protocol-text{font-size:calc(10*var(--u));font-weight:600;color:var(--muted);font-family:monospace}
+.protocol-chips{display:flex;gap:calc(6*var(--u))}
+.verify-layout{display:grid;grid-template-columns:1fr calc(340*var(--u));gap:calc(40*var(--u));align-items:start}
+.step-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:calc(16*var(--u));margin:calc(24*var(--u)) 0}
+.step-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r-card);padding:calc(20*var(--u));box-shadow:var(--shadow)}
+.step-label{font-size:calc(9*var(--u));font-weight:800;text-transform:uppercase;letter-spacing:0.07em;color:var(--blue);margin-bottom:calc(4*var(--u))}
+.step-title{font-size:calc(14*var(--u));font-weight:700;color:var(--navy);margin-bottom:calc(10*var(--u))}
+.mono{font-family:monospace;font-size:calc(11*var(--u));background:#f0f4ff;padding:calc(4*var(--u)) calc(8*var(--u));border-radius:calc(6*var(--u));color:var(--blue)}
+.student-id-card{
+  background:linear-gradient(135deg,#0f1fa8,#1d3fbf);
+  border-radius:calc(10*var(--u));padding:calc(16*var(--u));
+  margin-top:calc(10*var(--u));
+}
+.id-portrait{
+  width:calc(50*var(--u));height:calc(60*var(--u));
+  background:rgba(255,255,255,0.15);border-radius:calc(6*var(--u));
+  display:flex;align-items:center;justify-content:center;margin-bottom:calc(10*var(--u));
+}
+.id-portrait svg{width:calc(32*var(--u));height:calc(32*var(--u));color:rgba(255,255,255,0.6)}
+.id-name{font-size:calc(11*var(--u));font-weight:700;color:#fff}
+.id-num{font-size:calc(9*var(--u));color:rgba(255,255,255,0.7);font-family:monospace;margin-top:calc(3*var(--u))}
+.id-row{display:flex;gap:calc(16*var(--u));margin-top:calc(8*var(--u))}
+.id-field-label{font-size:calc(7.5*var(--u));color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.07em}
+.id-field-val{font-size:calc(9.5*var(--u));font-weight:700;color:#fff}
+.donut-wrap{display:flex;flex-direction:column;align-items:center;margin-top:calc(8*var(--u))}
+.donut-pct{font-size:calc(20*var(--u));font-weight:800;color:var(--navy);margin-top:calc(8*var(--u))}
+.trust-stats{display:flex;justify-content:space-around;margin-top:calc(10*var(--u))}
+.trust-stat{text-align:center}
+.trust-stat .num{font-size:calc(16*var(--u));font-weight:800;color:var(--blue)}
+.trust-stat .lbl{font-size:calc(9.5*var(--u));color:var(--muted)}
+.sso-row{display:flex;gap:calc(10*var(--u));align-items:center;flex-wrap:wrap;margin-top:calc(16*var(--u))}
+.sso-chip{background:var(--card);border:1.5px solid var(--border);border-radius:var(--r-pill);padding:calc(7*var(--u)) calc(14*var(--u));font-size:calc(12*var(--u));font-weight:700;color:var(--navy);cursor:pointer;transition:border-color .15s}
+.sso-chip:hover{border-color:var(--blue)}
+.hub-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:calc(14*var(--u));margin-top:calc(16*var(--u))}
+.hub-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r-card);padding:calc(14*var(--u));box-shadow:var(--shadow)}
+.hub-zone{font-size:calc(9*var(--u));font-weight:800;text-transform:uppercase;letter-spacing:0.07em;color:var(--blue);margin-bottom:calc(4*var(--u))}
+.hub-name{font-size:calc(12.5*var(--u));font-weight:700;color:var(--navy)}
+.hub-hours{font-size:calc(10.5*var(--u));color:var(--muted);margin-top:calc(4*var(--u))}
+.gps-line{display:flex;align-items:center;gap:calc(8*var(--u));margin-top:calc(14*var(--u));font-size:calc(11*var(--u));font-weight:600;color:var(--mint-text)}
+.pulse-dot{width:calc(8*var(--u));height:calc(8*var(--u));background:#22c55e;border-radius:50%;animation:pulse 1.5s infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(1.4)}}
+.scam-steps{display:grid;grid-template-columns:repeat(3,1fr);gap:calc(16*var(--u));margin-top:calc(16*var(--u))}
+.scam-step{background:var(--card);border:1px solid var(--border);border-radius:var(--r-card);padding:calc(16*var(--u));box-shadow:var(--shadow);text-align:center}
+.scam-icon{width:calc(40*var(--u));height:calc(40*var(--u));border-radius:50%;background:#eef1fc;display:flex;align-items:center;justify-content:center;margin:0 auto calc(8*var(--u))}
+.scam-icon svg{width:calc(20*var(--u));height:calc(20*var(--u));color:var(--blue)}
+.data-list{margin-top:calc(12*var(--u));display:flex;flex-direction:column;gap:calc(6*var(--u))}
+.data-item{display:flex;align-items:center;gap:calc(8*var(--u));font-size:calc(11.5*var(--u));color:var(--body-text)}
+.data-item svg{width:calc(14*var(--u));height:calc(14*var(--u));color:var(--mint-text)}
+.honor-strip{background:#f0f4ff;border-top:1px solid var(--border);padding:calc(14*var(--u)) 0;text-align:center;font-size:calc(12*var(--u));font-weight:600;color:var(--muted);margin-top:calc(32*var(--u))}
+.honor-strip a{color:var(--blue);text-decoration:underline}
+
+/* Verify Form */
+.verify-form-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r-panel);padding:calc(24*var(--u));box-shadow:var(--shadow);position:sticky;top:calc(80*var(--u))}
+.form-title{font-size:calc(16*var(--u));font-weight:800;color:var(--navy);margin-bottom:calc(4*var(--u))}
+.form-sub{font-size:calc(11.5*var(--u));color:var(--muted);margin-bottom:calc(20*var(--u))}
+.form-field{margin-bottom:calc(14*var(--u))}
+.form-label{font-size:calc(10.5*var(--u));font-weight:700;color:var(--body-text);margin-bottom:calc(5*var(--u));display:block;text-transform:uppercase;letter-spacing:0.04em}
+.form-input{
+  width:100%;border:1.5px solid var(--border);border-radius:var(--r-input);
+  padding:calc(10*var(--u)) calc(12*var(--u));font-size:calc(12.5*var(--u));
+  color:var(--body-text);background:var(--canvas);transition:border-color .15s;
+}
+.form-input:focus{outline:none;border-color:var(--blue)}
+.form-input.valid{border-color:#22c55e}
+.input-wrap{position:relative}
+.input-check{position:absolute;right:calc(10*var(--u));top:50%;transform:translateY(-50%);color:#22c55e}
+.input-check svg{width:calc(16*var(--u));height:calc(16*var(--u))}
+.drop-zone{
+  border:2px dashed var(--border);border-radius:var(--r-input);
+  padding:calc(16*var(--u));text-align:center;cursor:pointer;
+  transition:border-color .15s;background:#fafbff;
+}
+.drop-zone:hover{border-color:var(--blue)}
+.drop-file{display:flex;align-items:center;justify-content:space-between;margin-top:calc(8*var(--u));background:#eef1fc;border-radius:calc(8*var(--u));padding:calc(6*var(--u)) calc(10*var(--u));font-size:calc(10.5*var(--u));color:var(--blue)}
+.radio-group{display:flex;flex-direction:column;gap:calc(8*var(--u))}
+.radio-opt{display:flex;align-items:center;gap:calc(8*var(--u));font-size:calc(12*var(--u));cursor:pointer}
+.consent-row{display:flex;gap:calc(8*var(--u));align-items:flex-start;font-size:calc(11*var(--u));color:var(--muted);margin:calc(14*var(--u)) 0}
+.consent-row input{flex-shrink:0;margin-top:calc(2*var(--u))}
+
+/* ═══════════════════════════════════════════════════════════════
+   WANTED VIEW
+═══════════════════════════════════════════════════════════════ */
+.wanted-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:calc(20*var(--u));margin-bottom:calc(40*var(--u))}
+.wanted-card{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:var(--r-card);box-shadow:var(--shadow);overflow:hidden;
+  transition:transform .25s,box-shadow .25s;display:flex;flex-direction:column;
+}
+.wanted-card:hover{transform:translateY(calc(-4*var(--u)));box-shadow:var(--shadow-hover)}
+.wanted-top-border{height:calc(3*var(--u));width:100%}
+.wanted-body{padding:calc(14*var(--u));flex:1;display:flex;flex-direction:column}
+.wanted-avatar-row{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:calc(10*var(--u))}
+.wanted-avatar{width:calc(40*var(--u));height:calc(40*var(--u));border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:calc(13*var(--u));font-weight:700;color:#fff;position:relative;flex-shrink:0}
+.wanted-verified{position:absolute;bottom:calc(-2*var(--u));right:calc(-2*var(--u));width:calc(14*var(--u));height:calc(14*var(--u));background:#22c55e;border-radius:50%;border:calc(2*var(--u)) solid #fff;display:flex;align-items:center;justify-content:center}
+.wanted-verified svg{width:calc(8*var(--u));height:calc(8*var(--u));color:#fff}
+.wanted-time{font-size:calc(10*var(--u));color:var(--muted)}
+.wanted-name{font-size:calc(12.5*var(--u));font-weight:700;color:var(--navy)}
+.wanted-class{font-size:calc(10.5*var(--u));color:var(--muted)}
+.chip-row{display:flex;gap:calc(5*var(--u));flex-wrap:wrap;margin-bottom:calc(8*var(--u))}
+.chip{padding:calc(3*var(--u)) calc(8*var(--u));border-radius:var(--r-pill);font-size:calc(10*var(--u));font-weight:700}
+.chip-red{background:#fee2e2;color:var(--red)}
+.chip-blue{background:#eef1fc;color:var(--blue)}
+.chip-green{background:#dcfce7;color:#15803d}
+.chip-grey{background:#f1f3fa;color:var(--muted)}
+.wanted-desc{font-size:calc(11.5*var(--u));color:var(--muted);line-height:1.5;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;flex:1}
+.budget-block{display:flex;gap:calc(20*var(--u));margin:calc(12*var(--u)) 0;padding:calc(10*var(--u)) 0;border-top:1px solid var(--hairline);border-bottom:1px solid var(--hairline)}
+.budget-col{flex:1}
+.budget-col-label{font-size:calc(8.5*var(--u));font-weight:800;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted)}
+.budget-col-val{font-size:calc(14*var(--u));font-weight:800;color:var(--navy);margin-top:calc(2*var(--u))}
+.activity-dot{color:#22c55e}
+.helper-bar{
+  background:#f0fdf4;border:1px solid #bbf7d0;border-radius:var(--r-card);
+  padding:calc(16*var(--u)) calc(20*var(--u));
+  display:flex;align-items:center;gap:calc(16*var(--u));margin-bottom:calc(40*var(--u));
+}
+.helper-shield{width:calc(44*var(--u));height:calc(44*var(--u));border-radius:calc(12*var(--u));background:#dcfce7;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.helper-shield svg{width:calc(22*var(--u));height:calc(22*var(--u));color:#15803d}
+.hiw-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:calc(20*var(--u));margin-top:calc(24*var(--u))}
+.hiw-card{border-radius:var(--r-card);padding:calc(24*var(--u))}
+.hiw-num{font-size:calc(32*var(--u));font-weight:800;color:rgba(255,255,255,0.4);margin-bottom:calc(8*var(--u))}
+.hiw-title{font-size:calc(14*var(--u));font-weight:700;color:var(--navy)}
+.hiw-desc{font-size:calc(11.5*var(--u));color:var(--muted);margin-top:calc(6*var(--u))}
+.hiw-footnote{font-size:calc(10.5*var(--u));color:var(--mint-text);margin-top:calc(10*var(--u))}
+
+/* ═══════════════════════════════════════════════════════════════
+   SEARCH VIEW
+═══════════════════════════════════════════════════════════════ */
+.search-layout{display:grid;grid-template-columns:calc(280*var(--u)) 1fr;gap:calc(28*var(--u));align-items:start}
+.search-sidebar{
+  background:var(--card);border:1px solid var(--border);border-radius:var(--r-panel);
+  padding:calc(20*var(--u));box-shadow:var(--shadow);
+  position:sticky;top:calc(80*var(--u));
+}
+.sidebar-block{margin-bottom:calc(20*var(--u));padding-bottom:calc(20*var(--u));border-bottom:1px solid var(--hairline)}
+.sidebar-block:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0}
+.sidebar-title{font-size:calc(11*var(--u));font-weight:800;text-transform:uppercase;letter-spacing:0.07em;color:var(--body-text);margin-bottom:calc(10*var(--u));display:flex;align-items:center;justify-content:space-between}
+.course-chips{display:flex;gap:calc(5*var(--u));flex-wrap:wrap;margin-top:calc(8*var(--u))}
+.course-chip{
+  padding:calc(4*var(--u)) calc(10*var(--u));border-radius:var(--r-pill);
+  font-size:calc(10.5*var(--u));font-weight:700;cursor:pointer;
+  border:1.5px solid var(--border);color:var(--muted);
+  transition:all .15s;background:var(--card);
+}
+.course-chip.active{background:var(--navy);color:#fff;border-color:var(--navy)}
+.toggle-switch{position:relative;width:calc(36*var(--u));height:calc(20*var(--u));cursor:pointer}
+.toggle-switch input{opacity:0;width:0;height:0}
+.toggle-track{
+  position:absolute;inset:0;background:#d1d5db;border-radius:var(--r-pill);
+  transition:background .2s;
+}
+.toggle-track::before{
+  content:'';position:absolute;width:calc(16*var(--u));height:calc(16*var(--u));
+  left:calc(2*var(--u));bottom:calc(2*var(--u));background:#fff;border-radius:50%;
+  transition:transform .2s;
+}
+.toggle-switch input:checked+.toggle-track{background:var(--blue)}
+.toggle-switch input:checked+.toggle-track::before{transform:translateX(calc(16*var(--u)))}
+.sidebar-label{display:flex;align-items:center;justify-content:space-between;margin-top:calc(10*var(--u));cursor:pointer;gap:calc(8*var(--u))}
+.sidebar-label-text{font-size:calc(11.5*var(--u));font-weight:600;color:var(--body-text)}
+.sidebar-checkbox-row{display:flex;flex-direction:column;gap:calc(7*var(--u));margin-top:calc(6*var(--u))}
+.sidebar-check{display:flex;align-items:center;gap:calc(7*var(--u));font-size:calc(11.5*var(--u));cursor:pointer}
+.price-range-labels{display:flex;justify-content:space-between;font-size:calc(10.5*var(--u));color:var(--muted);margin-bottom:calc(4*var(--u))}
+.range-input{width:100%;height:calc(4*var(--u));accent-color:var(--blue)}
+.sidebar-radio-row{display:flex;flex-direction:column;gap:calc(7*var(--u));margin-top:calc(6*var(--u))}
+.sidebar-radio{display:flex;align-items:center;gap:calc(7*var(--u));font-size:calc(11.5*var(--u));cursor:pointer}
+.search-results-header{display:flex;align-items:center;gap:calc(12*var(--u));margin-bottom:calc(16*var(--u));flex-wrap:wrap}
+.results-count{font-size:calc(14*var(--u));font-weight:800;color:var(--navy)}
+.active-filters{display:flex;gap:calc(6*var(--u));flex-wrap:wrap;margin-bottom:calc(12*var(--u));align-items:center}
+.filter-tag{
+  display:inline-flex;align-items:center;gap:calc(5*var(--u));
+  background:#eef1fc;color:var(--blue);border-radius:var(--r-pill);
+  padding:calc(4*var(--u)) calc(10*var(--u));font-size:calc(10.5*var(--u));font-weight:700;
+}
+.filter-tag button{background:none;border:none;cursor:pointer;color:var(--blue);font-size:calc(12*var(--u));line-height:1}
+.search-result-card{
+  background:var(--card);border:1px solid var(--border);border-radius:var(--r-card);
+  box-shadow:var(--shadow);display:flex;gap:0;overflow:hidden;
+  margin-bottom:calc(16*var(--u));transition:transform .25s,box-shadow .25s;
+}
+.search-result-card:hover{transform:translateY(calc(-2*var(--u)));box-shadow:var(--shadow-hover)}
+.search-result-card:hover .result-photo img{transform:scale(1.04)}
+.result-photo{width:calc(180*var(--u));flex-shrink:0;position:relative;overflow:hidden}
+.result-photo img{width:100%;height:100%;object-fit:cover;transition:transform .4s}
+.result-body{padding:calc(16*var(--u));flex:1;display:flex;flex-direction:column}
+.result-price-row{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:calc(6*var(--u))}
+.result-meta{display:flex;gap:calc(6*var(--u));flex-wrap:wrap;margin-bottom:calc(6*var(--u))}
+.result-desc{font-size:calc(11.5*var(--u));color:var(--muted);line-height:1.5;flex:1}
+.result-seller-row{display:flex;align-items:center;gap:calc(10*var(--u));margin-top:calc(10*var(--u))}
+.seller-rating{display:flex;align-items:center;gap:calc(4*var(--u));font-size:calc(11*var(--u));font-weight:700;color:var(--amber)}
+.seller-dist{font-size:calc(11*var(--u));color:var(--muted)}
+.syllabus-banner{background:#eef4ff;border:1px solid #c7d8ff;border-radius:var(--r-card);padding:calc(14*var(--u)) calc(20*var(--u));margin-bottom:calc(20*var(--u));display:flex;align-items:center;gap:calc(16*var(--u));flex-wrap:wrap}
+.syllabus-text{flex:1;font-size:calc(11.5*var(--u));color:var(--blue)}
+.search-bar-wrap{
+  background:var(--card);border:1px solid var(--border);border-radius:var(--r-card);
+  padding:calc(14*var(--u)) calc(16*var(--u));box-shadow:var(--shadow);
+  display:flex;align-items:center;gap:calc(10*var(--u));margin-bottom:calc(14*var(--u));
+  flex-wrap:wrap;
+}
+.search-campus-chip{background:var(--navy);color:#fff;padding:calc(6*var(--u)) calc(10*var(--u));border-radius:var(--r-pill);font-size:calc(11*var(--u));font-weight:700}
+.search-input{flex:1;border:none;background:transparent;font-size:calc(14*var(--u));font-weight:500;color:var(--body-text);min-width:calc(200*var(--u))}
+.search-input:focus{outline:none}
+.search-hint{font-size:calc(10.5*var(--u));color:var(--muted);border:1px solid var(--border);border-radius:calc(5*var(--u));padding:calc(2*var(--u)) calc(6*var(--u))}
+.meetup-banner{background:#eef1fc;border:1px solid #d0d8f8;border-radius:var(--r-card);padding:calc(14*var(--u)) calc(20*var(--u));display:flex;align-items:center;justify-content:space-between;margin-top:calc(20*var(--u));gap:calc(16*var(--u));flex-wrap:wrap}
+.pagination{display:flex;align-items:center;gap:calc(6*var(--u));margin-top:calc(20*var(--u));justify-content:center}
+.page-btn{padding:calc(7*var(--u)) calc(13*var(--u));border-radius:calc(8*var(--u));font-size:calc(12*var(--u));font-weight:600;border:1.5px solid var(--border);background:var(--card);cursor:pointer;color:var(--body-text);transition:all .15s}
+.page-btn:hover,.page-btn.active{background:var(--blue);color:#fff;border-color:var(--blue)}
+
+/* ═══════════════════════════════════════════════════════════════
+   WISHLIST VIEW
+═══════════════════════════════════════════════════════════════ */
+.wishlist-layout{display:grid;grid-template-columns:1fr calc(280*var(--u));gap:calc(28*var(--u));align-items:start}
+.wishlist-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:calc(20*var(--u))}
+.wishlist-card{
+  background:var(--card);border:1px solid var(--border);border-radius:var(--r-card);
+  overflow:hidden;box-shadow:var(--shadow);transition:transform .25s,box-shadow .25s;
+}
+.wishlist-card:hover{transform:translateY(calc(-4*var(--u)));box-shadow:var(--shadow-hover)}
+.wishlist-card:hover .wcard-photo img{transform:scale(1.04)}
+.wcard-photo{position:relative;aspect-ratio:4/3;overflow:hidden}
+.wcard-photo img{width:100%;height:100%;object-fit:cover;transition:transform .4s}
+.wcard-seller-chip{position:absolute;top:calc(10*var(--u));left:calc(10*var(--u));background:rgba(255,255,255,0.9);border-radius:var(--r-pill);padding:calc(3*var(--u)) calc(8*var(--u));display:flex;align-items:center;gap:calc(5*var(--u));font-size:calc(10*var(--u));font-weight:700;color:var(--body-text);z-index:2}
+.wcard-price-tag{position:absolute;top:calc(10*var(--u));right:calc(10*var(--u));background:#fff;border-radius:var(--r-pill);padding:calc(4*var(--u)) calc(10*var(--u));font-size:calc(13*var(--u));font-weight:800;color:var(--navy);box-shadow:var(--shadow);z-index:2}
+.price-drop-pill{position:absolute;bottom:calc(10*var(--u));left:50%;transform:translateX(-50%);white-space:nowrap;z-index:2;padding:calc(4*var(--u)) calc(10*var(--u));border-radius:var(--r-pill);font-size:calc(10*var(--u));font-weight:700}
+.price-drop-green{background:#22c55e;color:#fff}
+.price-drop-amber{background:var(--amber);color:#fff}
+.wcard-hub-tag{position:absolute;bottom:calc(10*var(--u));right:calc(10*var(--u));background:rgba(0,0,0,0.5);color:#fff;border-radius:var(--r-pill);padding:calc(3*var(--u)) calc(8*var(--u));font-size:calc(9.5*var(--u));z-index:2}
+.wcard-body{padding:calc(14*var(--u))}
+.wcard-btn-row{display:flex;gap:calc(8*var(--u));margin-top:calc(10*var(--u));flex-wrap:wrap}
+.wcard-remove{font-size:calc(10.5*var(--u));color:var(--muted);cursor:pointer;text-align:center;margin-top:calc(8*var(--u));display:block;text-decoration:underline;background:none;border:none;width:100%}
+.wcard-remove:hover{color:var(--red)}
+.wishlist-rail{position:sticky;top:calc(80*var(--u));display:flex;flex-direction:column;gap:calc(16*var(--u))}
+.rail-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r-card);padding:calc(16*var(--u));box-shadow:var(--shadow)}
+.rail-card-title{font-size:calc(11*var(--u));font-weight:800;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);margin-bottom:calc(8*var(--u))}
+.mini-chart{display:flex;align-items:flex-end;gap:calc(5*var(--u));height:calc(60*var(--u));margin:calc(12*var(--u)) 0}
+.mini-bar{flex:1;border-radius:calc(4*var(--u)) calc(4*var(--u)) 0 0;background:var(--blue);opacity:0.7}
+.mini-bar-label{font-size:calc(9*var(--u));color:var(--muted);text-align:center;margin-top:calc(4*var(--u))}
+.hub-list{display:flex;flex-direction:column;gap:calc(8*var(--u));margin-top:calc(10*var(--u))}
+.hub-list-item{display:flex;align-items:center;justify-content:space-between;font-size:calc(11.5*var(--u))}
+.hub-count-pill{background:#eef1fc;color:var(--blue);border-radius:var(--r-pill);padding:calc(2*var(--u)) calc(8*var(--u));font-size:calc(10*var(--u));font-weight:700}
+.map-tile{background:linear-gradient(135deg,#c8d0e8,#9aa8cc);border-radius:calc(10*var(--u));height:calc(80*var(--u));margin-top:calc(10*var(--u));display:flex;align-items:center;justify-content:center}
+.map-tile svg{width:calc(32*var(--u));height:calc(32*var(--u));color:rgba(255,255,255,0.5)}
+.stats-row-wl{display:grid;grid-template-columns:repeat(3,1fr);gap:calc(14*var(--u));margin-bottom:calc(24*var(--u))}
+.wl-stat-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r-card);padding:calc(16*var(--u));box-shadow:var(--shadow)}
+.wl-stat-card.mint{background:var(--mint-bg)}
+.wl-stat-num{font-size:calc(22*var(--u));font-weight:800;color:var(--navy)}
+.wl-stat-card.mint .wl-stat-num{color:var(--mint-text)}
+.wl-stat-card.mint .micro-label{color:var(--mint-text);opacity:0.8}
+.watchlist-section{margin-top:calc(32*var(--u))}
+.watchlist-cards{display:grid;grid-template-columns:repeat(2,1fr);gap:calc(16*var(--u));margin-top:calc(16*var(--u))}
+.watchlist-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r-card);padding:calc(16*var(--u));box-shadow:var(--shadow)}
+.wl-notify-row{display:flex;align-items:center;justify-content:space-between;margin-top:calc(10*var(--u))}
+.wl-toggle-label{font-size:calc(11*var(--u));color:var(--muted)}
+.wl-icons{display:flex;gap:calc(8*var(--u));margin-top:calc(8*var(--u));}
+.wl-icon-btn{width:calc(28*var(--u));height:calc(28*var(--u));border-radius:50%;background:#f1f3fa;display:flex;align-items:center;justify-content:center;cursor:pointer;border:none;color:var(--muted)}
+.wl-icon-btn svg{width:calc(13*var(--u));height:calc(13*var(--u))}
+.wl-notif-items{display:flex;flex-direction:column;gap:calc(4*var(--u));margin-top:calc(8*var(--u))}
+.wl-notif-item{font-size:calc(10.5*var(--u));color:var(--muted);display:flex;align-items:center;gap:calc(5*var(--u))}
+
+/* ═══════════════════════════════════════════════════════════════
+   ABOUT VIEW
+═══════════════════════════════════════════════════════════════ */
+.about-hero{background:linear-gradient(160deg,var(--hero-top),var(--canvas));padding:calc(60*var(--u)) 0 calc(48*var(--u));text-align:center}
+.about-steps{display:grid;grid-template-columns:repeat(4,1fr);gap:calc(16*var(--u));margin-top:calc(24*var(--u))}
+.about-step{background:var(--card);border:1px solid var(--border);border-radius:var(--r-card);padding:calc(20*var(--u));box-shadow:var(--shadow);text-align:center}
+.about-step-num{width:calc(36*var(--u));height:calc(36*var(--u));border-radius:50%;background:var(--blue);color:#fff;font-size:calc(14*var(--u));font-weight:800;display:flex;align-items:center;justify-content:center;margin:0 auto calc(10*var(--u))}
+.values-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:calc(16*var(--u));margin-top:calc(20*var(--u))}
+.value-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r-card);padding:calc(20*var(--u));box-shadow:var(--shadow)}
+.value-icon{width:calc(40*var(--u));height:calc(40*var(--u));border-radius:calc(10*var(--u));background:#eef1fc;display:flex;align-items:center;justify-content:center;margin-bottom:calc(10*var(--u))}
+.value-icon svg{width:calc(20*var(--u));height:calc(20*var(--u));color:var(--blue)}
+
+/* ═══════════════════════════════════════════════════════════════
+   FOOTER
+═══════════════════════════════════════════════════════════════ */
+.footer{background:#eceffe;border-top:1px solid var(--border);padding:calc(40*var(--u)) 0 calc(24*var(--u))}
+.footer-grid{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:calc(32*var(--u));margin-bottom:calc(32*var(--u))}
+.footer-col-title{font-size:calc(11.5*var(--u));font-weight:800;text-transform:uppercase;letter-spacing:0.06em;color:var(--navy);margin-bottom:calc(14*var(--u))}
+.footer-links{display:flex;flex-direction:column;gap:calc(8*var(--u))}
+.footer-links a{font-size:calc(12*var(--u));color:var(--muted);transition:color .15s}
+.footer-links a:hover{color:var(--blue)}
+.footer-tagline{font-size:calc(11.5*var(--u));color:var(--muted);line-height:1.6;margin:calc(10*var(--u)) 0 calc(14*var(--u))}
+.footer-bottom{border-top:1px solid var(--border);padding-top:calc(16*var(--u));display:flex;align-items:center;justify-content:space-between}
+.footer-bottom-txt{font-size:calc(10.5*var(--u));color:var(--muted)}
+
+/* ═══════════════════════════════════════════════════════════════
+   MODAL
+═══════════════════════════════════════════════════════════════ */
+.modal-overlay{
+  position:fixed;inset:0;background:rgba(11,21,96,0.5);
+  z-index:500;display:none;align-items:flex-end;justify-content:center;
+  backdrop-filter:blur(4px);
+}
+.modal-overlay.open{display:flex}
+.modal-sheet{
+  background:var(--card);border-radius:calc(20*var(--u)) calc(20*var(--u)) 0 0;
+  padding:calc(28*var(--u));width:100%;max-width:calc(560*var(--u));
+  animation:slideUp .3s ease;
+}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:calc(20*var(--u))}
+.modal-title{font-size:calc(18*var(--u));font-weight:800;color:var(--navy)}
+.modal-close{width:calc(32*var(--u));height:calc(32*var(--u));border-radius:50%;background:#f1f3fa;display:flex;align-items:center;justify-content:center;cursor:pointer;border:none;color:var(--muted);font-size:calc(16*var(--u))}
+
+/* ═══════════════════════════════════════════════════════════════
+   RESPONSIVE
+═══════════════════════════════════════════════════════════════ */
+@media(max-width:760px){
+  .nav-links,.campus-switcher,.btn-post-text{display:none}
+  .hamburger{display:flex}
+  .hero-inner{grid-template-columns:1fr}
+  .escrow-card{width:100%}
+  .listing-grid{grid-template-columns:repeat(2,1fr);gap:calc(14*var(--u))}
+  .bundle-grid,.bundles-hero-inner,.verify-layout{grid-template-columns:1fr}
+  .step-cards,.hub-cards,.scam-steps,.explainer-grid,.hiw-grid,.about-steps,.values-grid{grid-template-columns:1fr}
+  .wanted-grid{grid-template-columns:1fr}
+  .search-layout{grid-template-columns:1fr}
+  .search-sidebar{position:static}
+  .wishlist-layout{grid-template-columns:1fr}
+  .wishlist-grid{grid-template-columns:1fr}
+  .watchlist-cards,.footer-grid{grid-template-columns:1fr 1fr}
+  .stat-cards-row{flex-wrap:nowrap;overflow-x:auto;padding-bottom:calc(8*var(--u))}
+  .stat-card{flex-shrink:0;min-width:calc(130*var(--u))}
+  .safety-banner{flex-direction:column;padding:calc(24*var(--u))}
+  .cta-band{flex-direction:column;padding:calc(24*var(--u))}
+  h1{font-size:calc(28*var(--u))}
+  h2{font-size:calc(22*var(--u))}
+  .countdown-row{flex-direction:column;align-items:flex-start}
+  .bundle-stats{flex-wrap:wrap;gap:calc(14*var(--u))}
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════ HEADER ═══════════════════════════════════ -->
+<header class="header" id="main-header">
+  <div class="header-inner">
+    <a href="#marketplace" class="logo-wrap">
+      <svg class="logo-mark" viewBox="0 0 28 28" fill="none">
+        <rect width="28" height="28" rx="7" fill="#0b1560"/>
+        <path d="M14 5L7 9v5c0 4.4 3 8.3 7 9.4 4-1.1 7-5 7-9.4V9L14 5z" fill="none" stroke="#6ee7b7" stroke-width="1.5" stroke-linejoin="round"/>
+        <path d="M11 14l2 2 4-4" stroke="#6ee7b7" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span class="logo-word">CampusZon</span>
+    </a>
+
+    <div class="campus-switcher">
+      <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+        <path d="M7 1L1 4.5l6 3 6-3-6-3.5zM1 4.5v5M13 4.5v5M4 6.2v3.5c0 1 1.3 2 3 2s3-1 3-2V6.2"/>
+      </svg>
+      UC Berkeley • Main Campus
+      <svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M2 4l3 3 3-3"/></svg>
+    </div>
+
+    <nav class="nav-links" id="nav-links">
+      <a href="#marketplace" class="nav-link active" data-view="marketplace">Marketplace</a>
+      <a href="#bundles" class="nav-link" data-view="bundles">Move-Out Bundles <span class="new-tag">New</span></a>
+      <a href="#wanted" class="nav-link" data-view="wanted">Wanted Board</a>
+      <a href="#search" class="nav-link" data-view="search">Advanced Search</a>
+      <a href="#wishlist" class="nav-link" data-view="wishlist">Wishlist</a>
+      <a href="#verify" class="nav-link" data-view="verify">Student Verification</a>
+      <a href="#about" class="nav-link" data-view="about">About Us</a>
+    </nav>
+
+    <div class="header-right">
+      <button class="btn-post" id="btn-post">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M7 1v12M1 7h12"/></svg>
+        <span class="btn-post-text">Post an Item</span>
+      </button>
+      <div class="bell-btn">
+        <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+          <path d="M9 1a5 5 0 0 1 5 5v3l1.5 2.5H2.5L4 9V6a5 5 0 0 1 5-5zM7 15.5a2 2 0 0 0 4 0"/>
+        </svg>
+        <span class="bell-dot" id="bell-dot"></span>
+      </div>
+      <div class="profile-wrap">
+        <div class="profile-avatar">ME</div>
+        <div class="verified-badge-sm">
+          <svg viewBox="0 0 7 7" fill="none" stroke="#fff" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M1.5 3.5l1.5 1.5 2.5-3"/></svg>
+        </div>
+      </div>
+      <button class="hamburger" id="hamburger-btn" aria-label="Menu">
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+          <path d="M2 5h16M2 10h16M2 15h16"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- Mobile Menu -->
+<div class="mobile-menu" id="mobile-menu">
+  <div class="mobile-sheet">
+    <div style="display:flex;justify-content:flex-end;margin-bottom:16px">
+      <button id="mobile-close" style="background:#f1f3fa;border:none;border-radius:50%;width:32px;height:32px;cursor:pointer;font-size:18px">✕</button>
+    </div>
+    <a href="#marketplace" class="nav-link" data-view="marketplace">Marketplace</a>
+    <a href="#bundles" class="nav-link" data-view="bundles">Move-Out Bundles</a>
+    <a href="#wanted" class="nav-link" data-view="wanted">Wanted Board</a>
+    <a href="#search" class="nav-link" data-view="search">Advanced Search</a>
+    <a href="#wishlist" class="nav-link" data-view="wishlist">Wishlist</a>
+    <a href="#verify" class="nav-link" data-view="verify">Student Verification</a>
+    <a href="#about" class="nav-link" data-view="about">About Us</a>
+    <div style="margin-top:16px">
+      <button class="btn btn-primary btn-full" id="btn-post-mobile">⊕ Post an Item</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════ VIEWS ═══════════════════════════════════ -->
+<main>
+  <section id="view-marketplace" class="view active"></section>
+  <section id="view-bundles" class="view"></section>
+  <section id="view-wanted" class="view"></section>
+  <section id="view-search" class="view"></section>
+  <section id="view-wishlist" class="view"></section>
+  <section id="view-verify" class="view"></section>
+  <section id="view-about" class="view"></section>
+</main>
+
+<!-- ═══════════════════════════════════ FOOTER ═══════════════════════════════════ -->
+<footer class="footer" id="main-footer">
+  <div class="content-col">
+    <div class="footer-grid" id="footer-grid">
+      <div>
+        <a href="#marketplace" class="logo-wrap" style="margin-bottom:12px;display:inline-flex">
+          <svg class="logo-mark" viewBox="0 0 28 28" fill="none">
+            <rect width="28" height="28" rx="7" fill="#0b1560"/>
+            <path d="M14 5L7 9v5c0 4.4 3 8.3 7 9.4 4-1.1 7-5 7-9.4V9L14 5z" fill="none" stroke="#6ee7b7" stroke-width="1.5" stroke-linejoin="round"/>
+            <path d="M11 14l2 2 4-4" stroke="#6ee7b7" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span class="logo-word">CampusZon</span>
+        </a>
+        <p class="footer-tagline">The closed-loop peer marketplace engineered exclusively for verified university students, faculty, and campus communities.</p>
+        <span class="pill pill-mint" style="font-size:calc(10*var(--u))">✓ 100% .edu Verified Students &amp; Faculty Only</span>
+      </div>
+      <div>
+        <div class="footer-col-title">Campus Safety</div>
+        <div class="footer-links">
+          <a href="#">Safety Pledge</a>
+          <a href="#">Designated Meetup Hubs</a>
+          <a href="#">Escrow &amp; Hold Policy</a>
+          <a href="#">Report Suspicious Activity</a>
+        </div>
+      </div>
+      <div id="footer-col-3">
+        <div class="footer-col-title">Popular Dorm Hubs</div>
+        <div class="footer-links">
+          <a href="#">Unit 1 &amp; Unit 2 Commons</a>
+          <a href="#">Foothill &amp; Stern Lounges</a>
+          <a href="#">Clark Kerr Campus Quad</a>
+          <a href="#">MLK Student Union Hub</a>
+        </div>
+      </div>
+      <div>
+        <div class="footer-col-title">Trust &amp; Legal</div>
+        <div class="footer-links">
+          <a href="#">Buyer &amp; Seller Protection</a>
+          <a href="#">Community Guidelines</a>
+          <a href="#">Privacy &amp; .edu Compliance</a>
+          <a href="#">Honor Code Standards</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span class="footer-bottom-txt">© 2025 CampusZon Inc. Official University Student Commons. All rights reserved.</span>
+      <span class="footer-bottom-txt">UC Berkeley Chapter · System Status</span>
+    </div>
+  </div>
+</footer>
+
+<!-- ═══════════════════════════════════ MODAL ═══════════════════════════════════ -->
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal-sheet">
+    <div class="modal-header">
+      <span class="modal-title">Post an Item</span>
+      <button class="modal-close" id="modal-close">✕</button>
+    </div>
+    <div class="form-field">
+      <label class="form-label">Item Title</label>
+      <input class="form-input" type="text" placeholder="e.g. Calculus Stewart 9th Edition">
+    </div>
+    <div class="form-field">
+      <label class="form-label">Price ($)</label>
+      <input class="form-input" type="number" placeholder="45">
+    </div>
+    <div class="form-field">
+      <label class="form-label">Category</label>
+      <select class="form-input filter-select" style="width:100%">
+        <option>Textbooks &amp; Courseware</option>
+        <option>Dorm &amp; Furniture</option>
+        <option>Electronics &amp; Calculators</option>
+        <option>Campus Gear &amp; Merch</option>
+        <option>Lab Equipment</option>
+        <option>Subleases &amp; Housing</option>
+      </select>
+    </div>
+    <button class="btn btn-primary btn-full" style="margin-top:8px">Post to CampusZon</button>
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   IMAGES
+═══════════════════════════════════════════════════════════════ */
+const IMAGES = {
+  calc: '', chair: '', ti84: '', headphones: '',
+  fridge: '', labcoat: '', sweatshirt: '', lamp: '',
+  bio_book: '', dissect: '', labcoat2: '', notes: '',
+  centrifuge: '', library: '',
+  wish_ochem: '', wish_headphones: '', wish_keurig: '',
+  wish_calc: '', wish_cart: '', wish_zip: '',
+  bundle_dorm: '', bundle_desk: '', bundle_kitchen: '',
+  bundle_bed: '', bundle_mcat: '', bundle_studio: ''
+};
+
+/* ═══════════════════════════════════════════════════════════════
+   UTILS
+═══════════════════════════════════════════════════════════════ */
+const $ = id => document.getElementById(id);
+const svgPin = `<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 1a3.5 3.5 0 0 1 3.5 3.5C9.5 7.5 6 11 6 11S2.5 7.5 2.5 4.5A3.5 3.5 0 0 1 6 1z"/><circle cx="6" cy="4.5" r="1.2"/></svg>`;
+const svgChat = `<svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8.5a1.5 1.5 0 0 1-1.5 1.5H4L1 12V3.5A1.5 1.5 0 0 1 2.5 2h8A1.5 1.5 0 0 1 12 3.5v5z"/></svg>`;
+const svgHeart = `<svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7 12S1 8 1 4.5a3 3 0 0 1 6 0 3 3 0 0 1 6 0C13 8 7 12 7 12z"/></svg>`;
+const svgCheck = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8l3.5 3.5L13 4"/></svg>`;
+const svgShield = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L4 6v5c0 5.5 3.5 10.7 8 12 4.5-1.3 8-6.5 8-12V6L12 2z"/><path d="M9 12l2 2 4-4"/></svg>`;
+const svgStar = `<svg viewBox="0 0 12 12" fill="currentColor" stroke="none"><path d="M6 1l1.5 3h3.2l-2.6 1.9 1 3L6 7.2 2.9 8.9l1-3L1.3 4H4.5z"/></svg>`;
+const svgTruck = `<svg viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="14" height="12" rx="1"/><path d="M15 8h4l2 4v4h-6V8z"/><circle cx="5.5" cy="17.5" r="1.5"/><circle cx="17.5" cy="17.5" r="1.5"/></svg>`;
+const svgLock = `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="9" width="14" height="10" rx="2"/><path d="M7 9V6a3 3 0 0 1 6 0v3"/></svg>`;
+const svgScan = `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M2 7V3h4M14 3h4v4M2 13v4h4M14 17h4v-4M5 10h10"/></svg>`;
+const svgDeposit = `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="8"/><path d="M10 6v8M7.5 13.5l2.5-2 2.5 2"/></svg>`;
+const svgEdit = `<svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2l3 3-7 7H2v-3L9 2z"/></svg>`;
+const svgTrash = `<svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4h10M5 4V2h4v2M11 4l-.5 8H3.5L3 4"/></svg>`;
+const svgMap = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>`;
+
+let wishlistCount = 0;
+
+function mkImg(src, grad, alt='') {
+  return `<img src="${src}" alt="${alt}" loading="lazy" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0" onerror="this.style.display='none'">`;
+}
+
+function photoBg(grad, src='', alt='') {
+  return `<div style="position:relative;width:100%;height:100%;background:${grad}">${mkImg(src, grad, alt)}</div>`;
+}
+
+function avatarChip(initials, cls) {
+  return `<div class="avatar ${cls}"><span>${initials}</span><span class="dot"></span></div>`;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ROUTER
+═══════════════════════════════════════════════════════════════ */
+const viewInits = {};
+
+function navigate(hash) {
+  const view = (hash||'').replace('#','') || 'marketplace';
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.nav-link').forEach(a => {
+    a.classList.toggle('active', a.dataset.view === view);
+  });
+  const el = $('view-'+view);
+  if (el) {
+    el.classList.add('active');
+    if (!el._inited && viewInits[view]) { viewInits[view](); el._inited = true; }
+  }
+  // Bundles footer col
+  const col3 = $('footer-col-3');
+  if (col3) {
+    if (view === 'bundles') {
+      col3.innerHTML = `<div class="footer-col-title">Seasonal &amp; Bundles</div>
+      <div class="footer-links">
+        <a href="#">Move-Out Clearance</a>
+        <a href="#">Bundle Deals</a>
+        <a href="#">Senior Graduation Sales</a>
+        <a href="#">Dolly Loan Program</a>
+      </div>`;
+    } else {
+      col3.innerHTML = `<div class="footer-col-title">Popular Dorm Hubs</div>
+      <div class="footer-links">
+        <a href="#">Unit 1 &amp; Unit 2 Commons</a>
+        <a href="#">Foothill &amp; Stern Lounges</a>
+        <a href="#">Clark Kerr Campus Quad</a>
+        <a href="#">MLK Student Union Hub</a>
+      </div>`;
+    }
+  }
+  window.scrollTo(0,0);
+  $('mobile-menu').classList.remove('open');
+  setupFadeUps();
+}
+
+window.addEventListener('hashchange', () => navigate(location.hash));
+document.addEventListener('DOMContentLoaded', () => {
+  navigate(location.hash);
+  setupScrollHeader();
+  setupModal();
+  setupHamburger();
+});
+
+function setupScrollHeader() {
+  const hdr = $('main-header');
+  window.addEventListener('scroll', () => {
+    hdr.classList.toggle('scrolled', window.scrollY > 8);
+  }, {passive:true});
+}
+
+function setupModal() {
+  const overlay = $('modal-overlay');
+  $('btn-post').onclick = () => overlay.classList.add('open');
+  const btnPostMobile = $('btn-post-mobile');
+  if (btnPostMobile) btnPostMobile.onclick = () => overlay.classList.add('open');
+  $('modal-close').onclick = () => overlay.classList.remove('open');
+  overlay.addEventListener('click', e => { if(e.target === overlay) overlay.classList.remove('open'); });
+}
+
+function setupHamburger() {
+  $('hamburger-btn').onclick = () => $('mobile-menu').classList.add('open');
+  $('mobile-close').onclick = () => $('mobile-menu').classList.remove('open');
+  document.querySelectorAll('#mobile-menu .nav-link').forEach(a => {
+    a.addEventListener('click', () => $('mobile-menu').classList.remove('open'));
+  });
+}
+
+function setupFadeUps() {
+  const obs = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if(e.isIntersecting){ e.target.classList.add('visible'); obs.unobserve(e.target); }});
+  }, {threshold:0.15});
+  document.querySelectorAll('.fade-up:not(.visible)').forEach(el => obs.observe(el));
+}
+
+function animateCount(el, target, duration=1200) {
+  if (window.matchMedia('(prefers-reduced-motion:reduce)').matches) { el.textContent = target; return; }
+  const start = performance.now();
+  const isFloat = String(target).includes('.');
+  function frame(now) {
+    const p = Math.min((now-start)/duration, 1);
+    const val = p * parseFloat(String(target).replace(/,/g,''));
+    el.textContent = isFloat ? val.toFixed(1) : Math.round(val).toLocaleString();
+    if (p < 1) requestAnimationFrame(frame);
+    else el.textContent = isFloat ? target : String(target);
+  }
+  requestAnimationFrame(frame);
+}
+
+function heroEntrance(container) {
+  if (window.matchMedia('(prefers-reduced-motion:reduce)').matches) return;
+  const recorder = new URLSearchParams(location.search).get('rec');
+  const els = container.querySelectorAll('[data-enter]');
+  els.forEach((el, i) => {
+    const delay = recorder ? (i * 55) : (i * 55);
+    el.animate([
+      {opacity:0, transform:'translateY(14px)'},
+      {opacity:1, transform:'translateY(0)'}
+    ], {duration:700, delay, fill:'forwards', easing:'cubic-bezier(.2,.8,.3,1)'});
+  });
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   VIEW 1 — MARKETPLACE
+═══════════════════════════════════════════════════════════════ */
+const LISTINGS = [
+  {id:'l1',badge:'COURSE MATCHED',badgeCls:'badge-course',sub:'MATH 1A / 1B',price:'$45',orig:'$180 new',off:'75% off',title:'Calculus Stewart 9th Ed…',desc:'Comprehensive calc textbook, lightly highlighted. Excellent condition for MATH 1A/1B.',loc:'Moffitt Library North Steps',seller:'Maya L.',cls:'Sr',hub:'Clark Kerr Campus',cat:'textbooks',grad:'linear-gradient(135deg,#c8a97e,#8b6340)',initials:'ML',avCls:'avatar-ml',imgKey:'calc'},
+  {id:'l2',badge:'DORM PICKUP',badgeCls:'badge-dorm',sub:'Like New',price:'$35',orig:'$110 retail',off:'68% off',title:'Ergonomic Mesh Dorm Desk…',desc:'Breathable mesh back, adjustable height, hardly used. Great for long study sessions.',loc:'Unit 2 Towle Hall Lounge',seller:'David K.',cls:'Jr',hub:'Unit 2 Residence',cat:'dorm',grad:'linear-gradient(135deg,#8aabcc,#4a7a9b)',initials:'DK',avCls:'avatar-dk',imgKey:'chair'},
+  {id:'l3',badge:'TECH TESTED',badgeCls:'badge-tech',sub:'Includes Charger',price:'$65',orig:'$145 store',off:'Save $80',title:'TI-84 Plus CE Color Graphing',desc:'Full color screen, OS updated. Includes charging cable and protective case.',loc:'MLK Student Union Lobby',seller:'Sarah T.',cls:'So',hub:'Stern Hall',cat:'electronics',grad:'linear-gradient(135deg,#b8956a,#7a5c35)',initials:'ST',avCls:'avatar-st',imgKey:'ti84'},
+  {id:'l4',badge:'HIGH DEMAND',badgeCls:'badge-high',sub:'Box & Case Included',price:'$130',orig:'$348 new',off:'62% off',title:'Sony WH-1000XM4…',desc:'Industry-leading noise cancellation. Original box, all accessories. Perfect condition.',loc:'Soda Hall CS Commons',seller:'Alex R.',cls:'Grad',hub:'EECS Department',cat:'electronics',grad:'linear-gradient(135deg,#2c3e6b,#1a2545)',initials:'AR',avCls:'avatar-ar',imgKey:'headphones'},
+  {id:'l5',badge:'READY FOR MOVE-IN',badgeCls:'badge-move',sub:'0.9 cu ft • Defrosted',price:'$50',orig:'$160 new',off:'68% off',title:'Mini Fridge w/ Freezer…',desc:'Compact 0.9 cu ft fridge with freezer compartment. Cleaned and defrosted, ready to go.',loc:'Foothill Lot Entrance',seller:'Jordan M.',cls:'So',hub:'Foothill Complex',cat:'dorm',grad:'linear-gradient(135deg,#9db8d4,#6a8fa8)',initials:'JM',avCls:'avatar-jm',imgKey:'fridge'},
+  {id:'l6',badge:'COURSE ESSENTIAL',badgeCls:'badge-essential',sub:'Size M • OSHA Approved',price:'$20',orig:'$55 bookstore',off:'63% off',title:'Chem 3A/3B Lab Coat &…',desc:'White lab coat, OSHA compliant, size M. Worn only a few times, clean and pressed.',loc:'Latimer Hall Courtyard',seller:'Chloe B.',cls:'Pre-Med',hub:'Unit 1 Putnam',cat:'lab',grad:'linear-gradient(135deg,#e8e0d5,#c5b89a)',initials:'CB',avCls:'avatar-cb',imgKey:'labcoat'},
+  {id:'l7',badge:'CAMPUS MERCH',badgeCls:'badge-merch',sub:'Size Medium',price:'$28',orig:'$68 official',off:'Save $40',title:'Official Champion Crewneck',desc:'Navy crewneck with gold lettering, size M. Minimal wear, great campus look.',loc:'Memorial Stadium Plaza',seller:'Marcus W.',cls:'Sr',hub:'Southside Co-ops',cat:'gear',grad:'linear-gradient(135deg,#1a3a6b,#0d2444)',initials:'MW',avCls:'avatar-mw',imgKey:'sweatshirt'},
+  {id:'l8',badge:'QUICK DEAL',badgeCls:'badge-quick',sub:'LED Bulb Included',price:'$15',orig:'$40 target',off:'62% off',title:'Standing Floor Lamp (Warm…',desc:'Adjustable floor lamp, warm white LED bulb included. Works perfectly, easy to move.',loc:'Unit 3 Courtyard Cafe',seller:'Elena P.',cls:'So',hub:'Unit 3 Norton',cat:'dorm',grad:'linear-gradient(135deg,#d4c5a9,#a89070)',initials:'EP',avCls:'avatar-ep',imgKey:'lamp'},
+];
+
+const LIVE_FEED = [
+  '● Maya L. swapped Bio 1A Notes at Moffitt Library (2m ago)',
+  '● David K. sold Dorm Chair at Unit 2 Towle Lounge (8m ago)',
+  '● Sarah T. completed TI-84 handoff at MLK Union (15m ago)',
+];
+
+viewInits.marketplace = function() {
+  const el = $('view-marketplace');
+  el.innerHTML = `
+  <div class="hero">
+    <div class="content-col">
+      <div class="hero-inner">
+        <div>
+          <div data-enter style="margin-bottom:calc(16*var(--u))">
+            <span class="pill pill-mint">
+              ${svgShield.replace('24','14').replace('24','14')} Berkeley Verified Commons • Spring 2025
+            </span>
+          </div>
+          <div class="hero-h1-wrap" data-enter>
+            <h1>Buy, Sell &amp; Swap Safely<br>with <span style="color:var(--blue);text-decoration-line:underline;text-decoration-color:#6ee7b7;text-decoration-thickness:2px;text-underline-offset:4px">Verified Students</span>.</h1>
+          </div>
+          <p class="hero-p" data-enter>No strangers, no shipping fees, no off-campus parking lot sketches. Exchange textbooks, tech, dorm essentials, and lab gear directly inside secured university zones.</p>
+          <div class="stat-cards-row" data-enter>
+            <div class="stat-card"><div class="stat-num" id="stat-listings">3,420</div><div class="stat-label">Active Listings</div></div>
+            <div class="stat-card"><div class="stat-num green" id="stat-handoffs">98%</div><div class="stat-label">On-Campus Hand-Offs</div></div>
+            <div class="stat-card"><div class="stat-num" id="stat-verified">100% ✓</div><div class="stat-label">.edu Verified Only</div></div>
+          </div>
+        </div>
+        <div class="escrow-card fade-up" data-enter>
+          <div class="escrow-shield">${svgShield}</div>
+          <div class="escrow-title">Campus Escrow &amp; Hold</div>
+          <div class="escrow-sub">Zero fee campus-protected handoffs</div>
+          <span class="pill pill-mint" style="font-size:calc(9.5*var(--u))">● ACTIVE</span>
+          <div class="live-feed" id="live-feed">
+            <div class="live-feed-line" id="live-feed-line">${LIVE_FEED[0]}</div>
+          </div>
+          <div style="margin-top:calc(10*var(--u));font-size:calc(10.5*var(--u));color:var(--muted)">✱ Blue Light Stations mapped</div>
+          <a href="#verify" style="font-size:calc(11*var(--u));font-weight:700;color:var(--blue);display:block;margin-top:calc(6*var(--u))">Explore Hubs →</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="content-col">
+    <div class="category-bar-wrap">
+      <div class="category-bar" id="cat-bar">
+        <button class="cat-pill active" data-cat="all">All Items (3,420)</button>
+        <button class="cat-pill" data-cat="textbooks">Textbooks &amp; Courseware</button>
+        <button class="cat-pill" data-cat="dorm">Dorm &amp; Furniture</button>
+        <button class="cat-pill" data-cat="electronics">Electronics &amp; Calculators</button>
+        <button class="cat-pill" data-cat="gear">Campus Gear &amp; Merch</button>
+        <button class="cat-pill" data-cat="lab">Lab Equipment</button>
+        <button class="cat-pill" data-cat="sublease">Subleases &amp; Housing</button>
+      </div>
+    </div>
+
+    <div class="filter-bar">
+      <span class="filter-chip">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 6l2.5 2.5L10 3"/></svg>
+        On-Campus Pickup Only
+      </span>
+      <select class="filter-select"><option>All Grades</option><option>Like New</option><option>Good</option><option>Acceptable</option></select>
+      <label class="filter-check">
+        <input type="checkbox" style="accent-color:var(--blue)">
+        ⚡ Fast Responder (&lt; 15m)
+      </label>
+      <span class="filter-label" id="filter-count">Showing 8 featured student drops</span>
+      <select class="filter-select"><option>Featured &amp; Course Relevant</option><option>Price: Low to High</option><option>Price: High to Low</option><option>Newest First</option></select>
+    </div>
+
+    <div class="listing-grid" id="listing-grid">
+      ${LISTINGS.map((l,i) => listingCard(l,i)).join('')}
+    </div>
+
+    <div class="safety-banner fade-up">
+      <div class="safety-banner-text">
+        <span class="pill pill-dark" style="font-size:calc(9*var(--u));margin-bottom:calc(14*var(--u))">✱ CAMPUS POLICE VERIFIED SAFE ZONES</span>
+        <h2>Trade with total peace of mind.</h2>
+        <p>Always meet at designated Campus Safety Zones with blue-light monitoring, surveillance coverage, and staff presence. Never hand over cash in off-campus blindspots.</p>
+        <div class="safety-banner-btns">
+          <button class="btn" style="background:#fff;color:var(--blue)">View 14 Verified Hubs</button>
+          <button class="btn btn-ghost">Safety Checklist</button>
+        </div>
+      </div>
+      <div class="shield-watermark">${svgShield.replace(/width="[^"]*" height="[^"]*"/, '')}</div>
+    </div>
+  </div>`;
+
+  setupCategoryFilter();
+  setupHearts();
+  startLiveFeed();
+  setTimeout(() => heroEntrance(el), 50);
+  setTimeout(() => {
+    animateCount($('stat-listings'), '3,420');
+    animateCount($('stat-handoffs'), '98%');
+  }, 300);
+};
+
+function listingCard(l, i) {
+  return `<div class="listing-card fade-up" data-cat="${l.cat}" style="transition-delay:${i*60}ms">
+    <div class="card-photo" style="background:${l.grad}">
+      ${photoBg(l.grad, IMAGES[l.imgKey], l.title)}
+      <span class="badge-top ${l.badgeCls}">${l.badge}</span>
+      <button class="heart-btn" data-id="${l.id}" aria-label="Save to wishlist">${svgHeart}</button>
+      <span class="frosted-tag">${l.sub}</span>
+    </div>
+    <div class="card-body">
+      <div class="price-row">
+        <span class="price">${l.price}</span>
+        <span class="struck">${l.orig}</span>
+        <span class="pill pill-mint" style="font-size:calc(9*var(--u));padding:calc(2*var(--u)) calc(7*var(--u))">${l.off}</span>
+      </div>
+      <div class="card-title" style="margin-bottom:calc(4*var(--u))">${l.title}</div>
+      <div style="font-size:calc(11*var(--u));color:var(--muted);overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${l.desc}</div>
+      <div class="location-pill">${svgPin} ${l.loc}</div>
+      <hr class="card-hr">
+      <div class="seller-row">
+        ${avatarChip(l.initials, l.avCls)}
+        <div class="seller-info">
+          <div class="seller-name">${l.seller} • ${l.cls}</div>
+          <div class="seller-sub">${l.hub}</div>
+        </div>
+        <button class="chat-btn" title="Message ${l.seller}">${svgChat}</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function setupCategoryFilter() {
+  const bar = $('cat-bar');
+  if (!bar) return;
+  bar.querySelectorAll('.cat-pill').forEach(pill => {
+    pill.addEventListener('click', () => {
+      bar.querySelectorAll('.cat-pill').forEach(p => p.classList.remove('active'));
+      pill.classList.add('active');
+      const cat = pill.dataset.cat;
+      const grid = $('listing-grid');
+      let visible = 0;
+      grid.querySelectorAll('.listing-card').forEach(card => {
+        const show = cat==='all' || card.dataset.cat === cat;
+        card.style.transition = 'opacity .25s, transform .25s';
+        card.style.opacity = show ? '1' : '0';
+        card.style.transform = show ? '' : 'translateY(8px)';
+        card.style.pointerEvents = show ? '' : 'none';
+        setTimeout(() => card.style.display = show ? '' : 'none', show ? 0 : 260);
+        if (show) { card.style.display=''; visible++; }
+      });
+      const fc = $('filter-count');
+      if(fc) fc.textContent = `Showing ${cat==='all'?8:visible} ${cat==='all'?'featured student drops':'items in category'}`;
+    });
+  });
+}
+
+function setupHearts() {
+  document.addEventListener('click', e => {
+    const btn = e.target.closest('.heart-btn');
+    if (!btn) return;
+    btn.classList.toggle('liked');
+    if (btn.classList.contains('liked')) {
+      wishlistCount++;
+      btn.animate([{transform:'scale(1)'},{transform:'scale(1.4)'},{transform:'scale(1)'}],{duration:250,easing:'cubic-bezier(.3,1.6,.5,1)'});
+    } else {
+      wishlistCount = Math.max(0, wishlistCount-1);
+    }
+    updateBellBadge();
+  });
+}
+
+function updateBellBadge() {
+  const dot = $('bell-dot');
+  if (dot) dot.style.display = wishlistCount > 0 ? 'block' : 'block';
+}
+
+let liveFeedIdx = 0;
+function startLiveFeed() {
+  const line = $('live-feed-line');
+  if (!line) return;
+  setInterval(() => {
+    liveFeedIdx = (liveFeedIdx+1) % LIVE_FEED.length;
+    line.style.opacity='0'; line.style.transform='translateY(-8px)';
+    setTimeout(() => {
+      line.textContent = LIVE_FEED[liveFeedIdx];
+      line.style.transition='opacity .3s,transform .3s';
+      line.style.opacity='1'; line.style.transform='translateY(0)';
+    }, 300);
+  }, 4000);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   VIEW 2 — BUNDLES
+═══════════════════════════════════════════════════════════════ */
+const BUNDLES = [
+  {title:'Senior STEM Dorm Starter Lot',price:'$115',retail:'$390',save:'$275',items:['Ergonomic Desk Chair','Desk Lamp + LED Strip','Storage Bins ×4','Mini Whiteboard','Dorm Fan','Study Lamp'],note:'Full setup perfect for incoming freshmen or transfers.',seller:'Tyler R.',major:'ChemE \'25',grad:'linear-gradient(135deg,#8a9db8,#5a7290)',initials:'TR',avCls:'avatar-dk'},
+  {title:'EECS Dual-Monitor Coding Rig',price:'$175',retail:'$520',save:'$345',items:['27-in 1080p Monitor ×2','Monitor Stand Riser','Mechanical Keyboard','USB-C Hub','Cable Management Kit','Desk Mat XL'],note:'Complete battle-station minus the PC — plug and study.',seller:'Kevin L.',major:'EECS \'25',grad:'linear-gradient(135deg,#4a6080,#2d4060)',initials:'KL',avCls:'avatar-mw'},
+  {title:'Apartment Move-Out Kitchen Pack',price:'$85',retail:'$260',save:'$175',items:['12-piece Cookware Set','Rice Cooker','Dish Rack','Utensil Set','Storage Containers ×6','Dish Soap Dispenser'],note:'Everything for your first off-campus kitchen setup.',seller:'Priya S.',major:'Nutrition \'25',grad:'linear-gradient(135deg,#c4a882,#9a7a55)',initials:'PS',avCls:'avatar-cb'},
+  {title:'Cozy Dorm Living Furniture Set',price:'$95',retail:'$310',save:'$215',items:['Bed Riser Set ×6','Storage Ottoman','3-Tier Bookshelf','Over-Door Organizer','Command Strip Hooks ×20','Lap Desk'],note:'Transform any bare dorm into a cozy living space.',seller:'Mia C.',major:'Psych \'25',grad:'linear-gradient(135deg,#b8c8e0,#8098b8)',initials:'MC',avCls:'avatar-st'},
+  {title:'Pre-Med MCAT &amp; Lab Mastery Kit',price:'$60',retail:'$195',save:'$135',items:['MCAT Prep Books ×3','Molecular Model Kit','Lab Notebook Pack','Highlighter Set','Anatomy Flash Cards'],note:'Everything a pre-med needs — without the sticker shock.',seller:'Anika P.',major:'MCB \'25',grad:'linear-gradient(135deg,#9ab8a0,#6a9070)',initials:'AP',avCls:'avatar-jm'},
+  {title:'Studio Living Complete Pack',price:'$120',retail:'$380',save:'$260',items:['3-Drawer Dresser','Wardrobe Organizer','Full-Length Mirror','Floor Lamp','Area Rug 4×6','Blackout Curtains'],note:'Studio-ready essentials for off-campus or grad housing.',seller:'Dani O.',major:'Arch \'25',grad:'linear-gradient(135deg,#c0b0d0,#9080b0)',initials:'DO',avCls:'avatar-ep'},
+];
+
+viewInits.bundles = function() {
+  const el = $('view-bundles');
+  el.innerHTML = `
+  <div class="bundles-hero">
+    <div class="content-col">
+      <div class="bundles-hero-inner">
+        <div>
+          <span class="pill pill-amber" style="margin-bottom:calc(16*var(--u));display:inline-flex" data-enter>UC BERKELEY CLASS OF 2025 CLEARANCE</span>
+          <h1 data-enter>Senior Move-Out &amp; Graduation<br>Bundle Liquidation.</h1>
+          <p class="hero-p" data-enter>Dorms and apartments clear out May 10–22. Score complete living setups, coding battle-stations, and major lab packs at 60–80% off retail before graduating seniors head off campus.</p>
+          <div class="countdown-row" data-enter>
+            <span class="countdown-label">TIME UNTIL FINAL DORM LOCKOUT</span>
+            <div class="countdown-tiles">
+              <div class="countdown-tile" id="cd-days">12</div>
+              <span class="countdown-sep">:</span>
+              <div class="countdown-tile" id="cd-hours">08</div>
+              <span class="countdown-sep">:</span>
+              <div class="countdown-tile" id="cd-mins">44</div>
+              <span class="countdown-sep">:</span>
+              <div class="countdown-tile" id="cd-secs">11</div>
+            </div>
+          </div>
+          <div class="bundle-stats" data-enter>
+            <div class="bundle-stat"><strong>$340</strong> Avg Bundle Savings</div>
+            <div class="bundle-stat"><strong>142</strong> Complete Setups</div>
+            <div class="bundle-stat"><strong>100%</strong> Cal Senior Verified</div>
+          </div>
+        </div>
+        <div>
+          <div class="dark-card">
+            <div class="dark-card-title">Senior Verified Guarantee</div>
+            <div class="dark-card-sub">Buy Whole Dorms, Not Pieces</div>
+            <div style="display:flex;gap:calc(8*var(--u));margin-top:calc(10*var(--u))">
+              <span class="pill" style="background:rgba(110,231,183,0.2);color:#6ee7b7;font-size:calc(9.5*var(--u))">✓ Escrow Protected</span>
+              <span class="pill" style="background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.7);font-size:calc(9.5*var(--u))">Senior Verified</span>
+            </div>
+            <div class="photo-card">
+              <span class="photo-card-label">LIVE HANDOFF HUB</span>
+              <span class="photo-card-title">Unit 2 Towle Hall Loading Zone</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="content-col">
+    <div class="tab-bar">
+      <button class="tab-btn active">All Move-Out Bundles (142)</button>
+      <button class="tab-btn">Full Dorm Room Kits (38)</button>
+      <button class="tab-btn">EECS / STEM Lab Workstations (29)</button>
+      <button class="tab-btn">Kitchen &amp; Meal Prep (24)</button>
+      <button class="tab-btn">Apartment Furniture Lots (21)</button>
+    </div>
+    <div class="filter-bar" style="margin-top:calc(14*var(--u))">
+      <select class="filter-select"><option>All Campus Zones</option><option>North Campus</option><option>Southside</option></select>
+      <select class="filter-select"><option>Sweet Spot: $50 – $150</option><option>Under $100</option><option>$150+</option></select>
+      <label class="filter-check"><input type="checkbox" style="accent-color:var(--blue)"> Graduating Class of '25 Only</label>
+      <label class="filter-check"><input type="checkbox" style="accent-color:var(--blue)"> Includes Dolly Loan</label>
+      <span class="filter-label">Showing 6 Featured of 142</span>
+    </div>
+
+    <div class="bundle-grid">
+      ${BUNDLES.map((b,i) => bundleCard(b,i)).join('')}
+    </div>
+
+    <div class="section-sm">
+      <div class="micro-label" style="text-align:center;margin-bottom:calc(8*var(--u))">HOW IT WORKS</div>
+      <h2 style="text-align:center;margin-bottom:calc(4*var(--u))">How Move-Out Bundles Work On Campus</h2>
+      <div class="explainer-grid">
+        ${[
+          {icon:svgTruck, title:'Designated Drop-Off Loading Docks', desc:'Each senior posts their bundle pickup at an official campus loading dock — no dorm-room chaos.', note:'✓ Dolly loan available at every dock'},
+          {icon:`<svg viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="9"/><path d="M11 7v4l3 3"/></svg>`, title:'Free Dolly & Hand Truck Loans', desc:'Borrow a dolly or hand truck at no cost from any campus loading zone during move-out week.', note:'✓ Available May 10–22 campus-wide'},
+          {icon:svgLock, title:'Campus Escrow Inspection Hold', desc:'Funds are held in escrow until you physically inspect and accept the bundle. Zero risk handoffs.', note:'✓ Full refund if bundle is misrepresented'},
+        ].map(e => `<div class="explainer-card fade-up">
+          <div class="explainer-icon">${e.icon}</div>
+          <h3 style="font-size:calc(14*var(--u));margin-bottom:calc(6*var(--u))">${e.title}</h3>
+          <p style="font-size:calc(11.5*var(--u));color:var(--muted)">${e.desc}</p>
+          <div class="explainer-footnote">${e.note}</div>
+        </div>`).join('')}
+      </div>
+    </div>
+
+    <div class="cta-band fade-up">
+      <div style="flex:1">
+        <h2>List Your Entire Dorm Room in Under 3 Minutes.</h2>
+        <p>Graduating? Don't leave money on the table. Bundle your whole room and reach 15,000+ verified Berkeley students instantly.</p>
+        <div class="cta-checks">
+          <div class="cta-check">${svgCheck} No individual listing fees — one bundle, one post</div>
+          <div class="cta-check">${svgCheck} Campus Escrow protection for every transaction</div>
+          <div class="cta-check">${svgCheck} Free dolly loan and loading dock access included</div>
+        </div>
+      </div>
+      <div class="cta-right">
+        <button class="btn btn-amber-border">Create Move-Out Bundle</button>
+        <div style="font-size:calc(10*var(--u));color:rgba(255,255,255,0.5);margin-top:calc(4*var(--u))">Takes less than 3 minutes</div>
+      </div>
+    </div>
+  </div>`;
+
+  setupTabBars();
+  startCountdown();
+  setTimeout(() => heroEntrance(el), 50);
+  setupFadeUps();
+};
+
+function bundleCard(b,i) {
+  return `<div class="bundle-card fade-up" style="transition-delay:${i*60}ms">
+    <div class="card-photo" style="background:${b.grad}">
+      ${photoBg(b.grad, '', b.title)}
+      <span class="badge-top badge-course" style="left:calc(10*var(--u));top:calc(10*var(--u))">${b.major}</span>
+      <span class="off-tag">72% OFF RETAIL</span>
+      <button class="heart-btn" aria-label="Save">${svgHeart}</button>
+    </div>
+    <div class="bundle-body">
+      <div class="bundle-seller-row">
+        ${avatarChip(b.initials, b.avCls)}
+        <div style="flex:1"><div class="seller-name">${b.seller} • ${b.major}</div></div>
+        <span class="pill pill-grey" style="font-size:calc(9*var(--u))">Senior</span>
+      </div>
+      <div class="card-title">${b.title}</div>
+      <div class="bundle-items">
+        <div class="bundle-items-label">BUNDLE CONTENTS (${b.items.length} ITEMS):</div>
+        <ul>${b.items.map(it=>`<li>${it}</li>`).join('')}</ul>
+      </div>
+      <div class="bundle-note">"${b.note}"</div>
+      <div class="bundle-price-row">
+        <span class="struck" style="font-size:calc(12*var(--u))">${b.retail} retail</span>
+        <span class="price-sm">${b.price}</span>
+        <span class="save-amber">Save $${b.save.replace('$','')}</span>
+      </div>
+      <button class="btn btn-dark">Claim Move-Out Bundle</button>
+    </div>
+  </div>`;
+}
+
+function setupTabBars() {
+  document.querySelectorAll('.tab-bar').forEach(bar => {
+    bar.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        bar.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+      });
+    });
+  });
+}
+
+let countdownInterval;
+function startCountdown() {
+  const target = new Date('2025-05-22T23:59:59');
+  function tick() {
+    const diff = Math.max(0, target - new Date());
+    const days = Math.floor(diff/864e5);
+    const hours = Math.floor((diff%864e5)/36e5);
+    const mins = Math.floor((diff%36e5)/6e4);
+    const secs = Math.floor((diff%6e4)/1e3);
+    const pad = n => String(n).padStart(2,'0');
+    const d=$('cd-days'),h=$('cd-hours'),m=$('cd-mins'),s=$('cd-secs');
+    if(d) d.textContent=pad(days);
+    if(h) h.textContent=pad(hours);
+    if(m) m.textContent=pad(mins);
+    if(s) s.textContent=pad(secs);
+  }
+  tick();
+  clearInterval(countdownInterval);
+  countdownInterval = setInterval(tick, 1000);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   VIEW 3 — VERIFY
+═══════════════════════════════════════════════════════════════ */
+const CIRCUMFERENCE = 2 * Math.PI * 52;
+viewInits.verify = function() {
+  const el = $('view-verify');
+  el.innerHTML = `
+  <div class="protocol-bar">
+    <div class="protocol-bar-inner">
+      <span class="protocol-text">University Institutional Cryptographic Verification Protocol v3.8</span>
+      <div class="protocol-chips">
+        <span class="pill pill-mint" style="font-size:calc(9*var(--u))">✓ FERPA &amp; Title IV Compliant</span>
+        <span class="pill pill-blue" style="font-size:calc(9*var(--u))">⟳ Registrar Direct-Sync Active</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="content-col" style="padding-top:calc(32*var(--u))">
+    <div class="verify-layout">
+      <div>
+        <span class="pill pill-navy" style="margin-bottom:calc(16*var(--u));display:inline-flex">🔒 ZERO UNVERIFIED PUBLIC ACCESS</span>
+        <h1 style="margin-bottom:calc(10*var(--u))">Campus Security &amp; Student Identity Verification</h1>
+        <p style="font-size:calc(13*var(--u));color:var(--muted);max-width:calc(560*var(--u))">Only verified students, faculty, and alumni with active .edu credentials can buy, sell, or trade. No strangers, no off-campus bots, zero scam tolerance.</p>
+
+        <div class="step-cards">
+          <!-- Step 1 -->
+          <div class="step-card fade-up">
+            <div class="step-label">STEP 01 / IDENTITY FOUNDATION</div>
+            <div class="step-title">University Email OTP</div>
+            <div class="mono" style="margin-bottom:calc(10*var(--u))">alex.morgan@berkeley.edu</div>
+            <span class="pill pill-blue" style="font-size:calc(9*var(--u));margin-bottom:calc(10*var(--u))">🔐 2FA Enforced</span>
+            <p style="font-size:calc(10.5*var(--u));color:var(--muted);margin-bottom:calc(10*var(--u))">Last cryptographically validated 2 days ago</p>
+            <button class="btn btn-ghost-dark btn-sm">Re-test Inbox</button>
+          </div>
+          <!-- Step 2 -->
+          <div class="step-card fade-up">
+            <div class="step-label">STEP 02 / BIOMETRIC &amp; ID CARD</div>
+            <div class="step-title">Official Student ID Match</div>
+            <div class="student-id-card">
+              <div style="display:flex;gap:calc(10*var(--u))">
+                <div class="id-portrait">
+                  <svg viewBox="0 0 32 32" fill="none" stroke="rgba(255,255,255,0.6)" stroke-width="1.5"><circle cx="16" cy="11" r="5"/><path d="M5 27c0-6 4.5-10 11-10s11 4 11 10"/></svg>
+                </div>
+                <div>
+                  <div class="id-name">Alexandra R. Morgan</div>
+                  <div class="id-num">ID# 3034928190</div>
+                  <div class="id-row">
+                    <div><div class="id-field-label">Expiration</div><div class="id-field-val">MAY 2026</div></div>
+                    <div><div class="id-field-label">Status</div><div class="id-field-val" style="color:#6ee7b7">MATRICULATED</div></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- Step 3 -->
+          <div class="step-card fade-up">
+            <div class="step-label">STEP 03 / ON-CAMPUS TRACK</div>
+            <div class="step-title">Exchange Trust Index</div>
+            <div class="donut-wrap">
+              <svg width="120" height="120" viewBox="0 0 120 120">
+                <circle cx="60" cy="60" r="52" fill="none" stroke="#e6e9f5" stroke-width="10"/>
+                <circle id="donut-ring" cx="60" cy="60" r="52" fill="none" stroke="#0f1fa8" stroke-width="10"
+                  stroke-linecap="round" stroke-dasharray="${CIRCUMFERENCE}"
+                  stroke-dashoffset="${CIRCUMFERENCE}" transform="rotate(-90 60 60)"
+                  style="transition:stroke-dashoffset 1.4s cubic-bezier(.4,0,.2,1)"/>
+                <text x="60" y="65" text-anchor="middle" font-size="18" font-weight="800" fill="#0b1560">99.4%</text>
+              </svg>
+            </div>
+            <div class="trust-stats">
+              <div class="trust-stat"><div class="num">42</div><div class="lbl">Safe Exchanges</div></div>
+              <div class="trust-stat"><div class="num" style="color:#22c55e">0</div><div class="lbl">Disputes</div></div>
+              <div class="trust-stat"><div class="num">38</div><div class="lbl">Positive Reviews</div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="padding:calc(20*var(--u));margin-bottom:calc(20*var(--u))">
+          <div style="font-size:calc(13*var(--u));font-weight:800;color:var(--navy);margin-bottom:calc(10*var(--u))">University SSO Direct Gateway</div>
+          <div class="sso-row">
+            <button class="sso-chip">CalNet Login</button>
+            <button class="sso-chip">Shibboleth v4</button>
+            <button class="sso-chip">Okta Campus</button>
+          </div>
+          <p style="font-size:calc(10.5*var(--u));color:var(--muted);margin-top:calc(10*var(--u))">Alumni accounts are granted read-only marketplace access. Active enrollment required for buying and selling.</p>
+        </div>
+
+        <div class="card" style="padding:calc(20*var(--u));margin-bottom:calc(20*var(--u))">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:calc(14*var(--u));flex-wrap:wrap;gap:8px">
+            <div style="font-size:calc(13*var(--u));font-weight:800;color:var(--navy)">Designated Campus Meetup Hubs</div>
+            <span class="pill pill-navy" style="font-size:calc(9*var(--u))">📹 CCTV 24/7 Recording</span>
+          </div>
+          <div class="hub-cards">
+            ${[
+              {zone:'ZONE ALPHA',name:'Moffitt Library',hours:'Mon–Fri 8am–10pm · Sat–Sun 10am–8pm',status:'Open',statusCls:'pill-mint'},
+              {zone:'ZONE BETA',name:'MLK Jr. Union',hours:'Daily 7am–11pm · Extended during Finals',status:'Open',statusCls:'pill-mint'},
+              {zone:'ZONE DELTA',name:'UCPD Station',hours:'24/7 · 365 Days per Year',status:'Always Open',statusCls:'pill-blue'},
+            ].map(h=>`<div class="hub-card">
+              <div class="hub-zone">${h.zone}</div>
+              <div class="hub-name">${h.name}</div>
+              <div class="hub-hours">${h.hours}</div>
+              <span class="pill ${h.statusCls}" style="font-size:calc(9*var(--u));margin-top:calc(8*var(--u))">● ${h.status}</span>
+            </div>`).join('')}
+          </div>
+          <div class="gps-line">
+            <span class="pulse-dot"></span>
+            GPS Safe Radius Active — All zones monitored in real-time
+          </div>
+        </div>
+
+        <div class="card" style="padding:calc(20*var(--u));margin-bottom:calc(20*var(--u))">
+          <div style="font-size:calc(13*var(--u));font-weight:800;color:var(--navy);margin-bottom:calc(14*var(--u))">ScamShield™ Escrow Protocol</div>
+          <div class="scam-steps">
+            ${[
+              {icon:svgLock,title:'Locked in Escrow',desc:'Funds held safely until handoff is confirmed'},
+              {icon:svgScan,title:'Physical Scan Check',desc:'Item verified at designated campus hub'},
+              {icon:svgDeposit,title:'Direct Deposit',desc:'Instant transfer to seller after confirmation'},
+            ].map((s,i)=>`<div class="scam-step">
+              <div class="scam-icon">${s.icon}</div>
+              <div style="font-size:calc(12*var(--u));font-weight:700;color:var(--navy)">${s.title}</div>
+              <div style="font-size:calc(10.5*var(--u));color:var(--muted);margin-top:calc(4*var(--u))">${s.desc}</div>
+              ${i<2?`<div style="font-size:calc(18*var(--u));color:var(--muted);margin-top:calc(8*var(--u))">→</div>`:''}
+            </div>`).join('')}
+          </div>
+          <div class="data-list">
+            <div style="font-size:calc(11*var(--u));font-weight:800;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);margin-top:calc(10*var(--u))">Data Protection Guarantee</div>
+            ${['FERPA Directory Compliance','End-to-End Cryptographic Vault','Zero 3rd-Party Commercial Tracking'].map(item=>
+              `<div class="data-item">${svgCheck.replace(/\d+/g,s=>s==='16'?'14':s)} ${item}</div>`
+            ).join('')}
+          </div>
+        </div>
+
+        <div class="honor-strip">
+          🎓 University Student Honor Code Enforced &nbsp;·&nbsp;
+          <a href="#">Read Student Commons By-Laws →</a>
+        </div>
+      </div>
+
+      <!-- Right column: Form -->
+      <div>
+        <div class="verify-form-card">
+          <div style="display:flex;align-items:center;gap:calc(10*var(--u));margin-bottom:calc(14*var(--u))">
+            <div style="width:calc(44*var(--u));height:calc(44*var(--u));border-radius:50%;border:calc(3*var(--u)) solid #22c55e;overflow:hidden;background:#eef1fc;display:flex;align-items:center;justify-content:center">
+              <svg viewBox="0 0 32 32" fill="none" stroke="var(--blue)" stroke-width="1.5" width="22" height="22"><circle cx="16" cy="11" r="5"/><path d="M5 27c0-6 4.5-10 11-10s11 4 11 10"/></svg>
+            </div>
+            <div>
+              <div style="font-size:calc(12*var(--u));font-weight:800;color:var(--navy)">Alex Morgan <span style="color:#22c55e">[ACTIVE .EDU]</span></div>
+              <div style="font-size:calc(10.5*var(--u));color:var(--muted)">UC Berkeley • Haas School of Business</div>
+            </div>
+          </div>
+          <div class="form-title">Request Verification / Renewal</div>
+          <div class="form-sub">Submit your credentials for instant .edu cryptographic verification.</div>
+          <div class="form-field">
+            <label class="form-label">Campus</label>
+            <select class="form-input filter-select" style="width:100%">
+              <option>UC Berkeley – Main Campus</option>
+              <option>UC Berkeley – Extension</option>
+            </select>
+          </div>
+          <div class="form-field">
+            <label class="form-label">Academic Email</label>
+            <div class="input-wrap">
+              <input class="form-input valid" type="email" value="alex.morgan@berkeley.edu" id="verify-email">
+              <span class="input-check">${svgCheck}</span>
+            </div>
+          </div>
+          <div class="form-field">
+            <label class="form-label">Student ID Upload</label>
+            <div class="drop-zone">
+              <div style="font-size:calc(11*var(--u));color:var(--muted)">Drag &amp; drop ID scan here</div>
+              <div class="drop-file">
+                <span>📄 cal1_front_scan_2025.png (2.4 MB)</span>
+                <button style="background:none;border:none;cursor:pointer;color:var(--red);font-weight:700">⊗</button>
+              </div>
+            </div>
+          </div>
+          <div class="form-field">
+            <label class="form-label">Student Type</label>
+            <div class="radio-group">
+              ${['Undergraduate','Graduate / Ph.D.','Faculty / Staff','Verified Alumni'].map((opt,i)=>
+                `<label class="radio-opt"><input type="radio" name="stype" ${i===0?'checked':''}> ${opt}</label>`
+              ).join('')}
+            </div>
+          </div>
+          <label class="consent-row">
+            <input type="checkbox" checked>
+            <span>I certify all submitted information is accurate and authorize CampusZon to verify my credentials with UC Berkeley Registrar.</span>
+          </label>
+          <button class="btn btn-primary btn-full" id="verify-btn">Request Immediate Verification</button>
+        </div>
+      </div>
+    </div>
+  </div>`;
+
+  setupVerifyForm();
+  setTimeout(() => animateDonut(), 500);
+  setupFadeUps();
+};
+
+function animateDonut() {
+  const ring = $('donut-ring');
+  if (!ring || window.matchMedia('(prefers-reduced-motion:reduce)').matches) {
+    if(ring) ring.style.strokeDashoffset = CIRCUMFERENCE * 0.006;
+    return;
+  }
+  setTimeout(() => {
+    ring.style.strokeDashoffset = CIRCUMFERENCE * (1 - 0.994);
+  }, 100);
+}
+
+function setupVerifyForm() {
+  const btn = $('verify-btn');
+  if (!btn) return;
+  btn.addEventListener('click', () => {
+    const emailEl = $('verify-email');
+    const email = emailEl ? emailEl.value : '';
+    if (!email.endsWith('.edu')) {
+      emailEl.style.borderColor = 'var(--red)';
+      emailEl.placeholder = 'Must be a valid .edu address';
+      return;
+    }
+    btn.disabled = true;
+    btn.textContent = '⟳ Verifying…';
+    btn.style.opacity = '0.8';
+    setTimeout(() => {
+      btn.classList.remove('btn-primary');
+      btn.classList.add('btn-success');
+      btn.textContent = '✓ Verification Submitted';
+      btn.disabled = false;
+      btn.style.opacity = '1';
+    }, 2000);
+  });
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   VIEW 4 — WANTED
+═══════════════════════════════════════════════════════════════ */
+const WANTED = [
+  {border:'#ef4444',initials:'TL',avCls:'avatar-cb',name:'Taylor L.',course:'BIO 3B • Jr',time:'12m ago',tags:[{t:'Urgent (Needed by Thu Lab)',cls:'chip-red'},{t:'Course Material',cls:'chip-blue'}],zone:'Latimer Hall / Stanley Hall',title:'Chem 3B Molecular Model Kit',desc:'Need the HGS Molecular Model Kit for Chem 3B lab section starting Thursday. The campus store is sold out. Willing to pick up anywhere on campus.',budget:'$15–$25',activity:'● 4 offers received',actColor:'#22c55e'},
+  {border:'#0c6b3e',initials:'SK',avCls:'avatar-dk',name:'Sam K.',course:'POLS 1 • Fr',time:'1h ago',tags:[{t:'Dorm Living',cls:'chip-green'},{t:'This Week',cls:'chip-grey'}],zone:'Unit 1 & 2 Complex',title:'Mini Refrigerator / Compact Fridge',desc:'Looking for a working mini fridge for my dorm room. Any brand, any color as long as it\'s under 2.5 cu ft and actually cold. Can pick up with help.',budget:'Up to $50',activity:'● 2 offers received',actColor:'#22c55e'},
+  {border:'#0f1fa8',initials:'RP',avCls:'avatar-st',name:'Riley P.',course:'ECON 1 • So',time:'2h ago',tags:[{t:'Course Material',cls:'chip-blue'},{t:'Trade Eligible',cls:'chip-green'}],zone:'Dwinelle Hall / Barrows',title:'Microeconomics 5th Edition',desc:'Looking for Varian Intermediate Microeconomics 5th Ed or later. Happy to trade my Econ 2 textbook plus cash difference. Any condition considered.',budget:'$30 or Trade',activity:'Be the first to reply',actColor:'var(--muted)'},
+  {border:'#0f1fa8',initials:'CT',avCls:'avatar-mw',name:'Chris T.',course:'CS 61A • So',time:'3h ago',tags:[{t:'Electronics',cls:'chip-blue'},{t:'This Week',cls:'chip-grey'}],zone:'Soda Hall / Cory Hall',title:'27-inch 144Hz Monitor',desc:'Need a 27in 144Hz monitor for my CS setup. IPS preferred but TN okay. Must be in working condition, no dead pixels. HDMI or DP port required.',budget:'$100–$140',activity:'● 1 offer received',actColor:'#22c55e'},
+  {border:'#0c6b3e',initials:'AL',avCls:'avatar-cb',name:'Avery L.',course:'Haas MBA • Grad',time:'5h ago',tags:[{t:'Quick Need',cls:'chip-red'},{t:'Trade Eligible',cls:'chip-green'}],zone:'Haas School / Downtown BART',title:'Handheld Garment Steamer for Career Fair',desc:'Career fair is tomorrow and my shirt is wrinkled. Need to borrow or buy a handheld garment steamer. Will pay $10 and bring coffee. Very urgent!',budget:'$10 + Free Coffee',activity:'● 6 offers received',actColor:'#22c55e'},
+  {border:'#ef4444',initials:'MW',avCls:'avatar-mw',name:'Morgan W.',course:'ESPM 155 • Jr',time:'8h ago',tags:[{t:'Safety Gear',cls:'chip-red'},{t:'Urgent',cls:'chip-red'}],zone:'Sproul Plaza / Telegraph Ave',title:'Heavy Duty U-Lock Bike Lock',desc:'My bike lock broke and I need a U-lock ASAP to secure my bike outside Sproul. Any brand, must be heavy duty. Cash ready for quick handoff.',budget:'$20',activity:'● 3 offers received',actColor:'#22c55e'},
+];
+
+viewInits.wanted = function() {
+  const el = $('view-wanted');
+  el.innerHTML = `
+  <div class="content-col" style="padding-top:calc(32*var(--u))">
+    <div style="display:flex;align-items:center;gap:calc(10*var(--u));flex-wrap:wrap;margin-bottom:calc(6*var(--u))">
+      <span style="font-size:calc(11*var(--u));color:var(--muted)">Commons / Community ISO Board</span>
+      <span class="pill pill-mint" style="font-size:calc(9.5*var(--u))">● 8 New Today</span>
+      <span style="margin-left:auto;font-size:calc(11*var(--u));color:var(--muted)">15,420 Active Berkeley Students · 89% Match Rate in 48h</span>
+    </div>
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:calc(10*var(--u));flex-wrap:wrap;gap:12px">
+      <div>
+        <h1>Wanted &amp; ISO Board <span style="color:var(--blue)"><em>(In Search Of)</em></span></h1>
+        <p style="font-size:calc(13*var(--u));color:var(--muted);margin-top:calc(8*var(--u));max-width:calc(560*var(--u))">Looking for a specific textbook, dorm item, lab kit, or ride-share? Post your request to 15,000+ campus peers before spending full retail price.</p>
+      </div>
+      <button class="btn btn-primary">+ Post a Wanted Request</button>
+    </div>
+
+    <div class="tab-bar">
+      <button class="tab-btn active">All Requests 38</button>
+      <button class="tab-btn">Textbooks &amp; Notes 14</button>
+      <button class="tab-btn">Dorm &amp; Living 9</button>
+      <button class="tab-btn">Electronics &amp; Gear 7</button>
+      <button class="tab-btn">Moving &amp; Boxes 5</button>
+      <button class="tab-btn">Study Partners / Rides 3</button>
+    </div>
+
+    <div class="filter-bar">
+      <select class="filter-select"><option>Urgency Timeline</option><option>Most Urgent</option><option>This Week</option></select>
+      <select class="filter-select"><option>Offered Budget</option><option>Under $25</option><option>$25–$75</option><option>$75+</option></select>
+      <select class="filter-select"><option>Campus Zone / Dorm</option><option>North Campus</option><option>Southside</option><option>Unit 1&2</option></select>
+      <input class="form-input" type="text" placeholder="Search wanted requests…" style="flex:1;min-width:calc(140*var(--u))">
+    </div>
+    <div style="font-size:calc(11.5*var(--u));color:var(--muted);margin-bottom:calc(20*var(--u))">
+      Showing <strong style="color:var(--navy)">6 active wanted requests</strong> across campus &nbsp;·&nbsp; Sorted by: <strong>Most Urgent First</strong>
+    </div>
+
+    <div class="wanted-grid">
+      ${WANTED.map((w,i) => wantedCard(w,i)).join('')}
+    </div>
+
+    <div class="helper-bar fade-up">
+      <div class="helper-shield">${svgShield.replace(/width="[^"]*" height="[^"]*"/, 'width="22" height="22"')}</div>
+      <div>
+        <div style="font-size:calc(13*var(--u));font-weight:700;color:var(--navy)">Have an item a classmate is looking for?</div>
+        <div style="font-size:calc(11.5*var(--u));color:var(--muted)">Browse wanted requests and earn by helping a fellow student out.</div>
+      </div>
+      <a href="#verify" class="btn btn-ghost-dark btn-sm" style="margin-left:auto;white-space:nowrap">View Verified Meetup Zones →</a>
+    </div>
+
+    <div class="section-sm">
+      <div class="micro-label" style="text-align:center;margin-bottom:calc(8*var(--u))">SIMPLE CAMPUS MECHANISM</div>
+      <h2 style="text-align:center;margin-bottom:calc(4*var(--u))">How Wanted &amp; ISO Posts Work</h2>
+      <div class="hiw-grid">
+        ${[
+          {num:'1',bg:'#eef1fc',title:'Post what you need',desc:'Describe the item, set your budget and campus zone. Your request goes live instantly to 15,000+ verified students.',note:'✓ Free to post, always'},
+          {num:'2',bg:'#f0fdf4',title:'Classmates reply with offers',desc:'Peers with matching items message you directly through the platform\'s secure in-app chat.',note:'✓ All senders are .edu verified'},
+          {num:'3',bg:'#e0f2fe',title:'Meet safely on campus to swap',desc:'Choose from 14 blue-light monitored meetup hubs. Campus Escrow protects both parties throughout.',note:'✓ Every hub has CCTV coverage'},
+        ].map(s=>`<div class="hiw-card fade-up" style="background:${s.bg}">
+          <div class="hiw-num">${s.num}</div>
+          <div class="hiw-title">${s.title}</div>
+          <div class="hiw-desc">${s.desc}</div>
+          <div class="hiw-footnote">${s.note}</div>
+        </div>`).join('')}
+      </div>
+    </div>
+  </div>`;
+
+  setupTabBars();
+  setupFadeUps();
+  setTimeout(() => heroEntrance(el), 50);
+};
+
+function wantedCard(w, i) {
+  return `<div class="wanted-card fade-up" style="transition-delay:${i*60}ms">
+    <div class="wanted-top-border" style="background:${w.border}"></div>
+    <div class="wanted-body">
+      <div class="wanted-avatar-row">
+        <div>
+          <div style="display:flex;align-items:center;gap:calc(8*var(--u));margin-bottom:calc(4*var(--u))">
+            <div class="wanted-avatar ${w.avCls}">${w.initials}<div class="wanted-verified">${svgCheck.replace(/\d+/g,s=>s==='16'?'8':s)}</div></div>
+            <div>
+              <div class="wanted-name">${w.name}</div>
+              <div class="wanted-class">${w.course}</div>
+            </div>
+          </div>
+          <span class="pill pill-mint" style="font-size:calc(8.5*var(--u))">✓ .edu verified</span>
+        </div>
+        <span class="wanted-time">${w.time}</span>
+      </div>
+      <div class="chip-row">
+        ${w.tags.map(t=>`<span class="chip ${t.cls}">${t.t}</span>`).join('')}
+      </div>
+      <div style="font-size:calc(10.5*var(--u));color:var(--muted);margin-bottom:calc(8*var(--u))">${svgPin.replace(/12/g,'10')} ${w.zone}</div>
+      <div class="card-title" style="margin-bottom:calc(6*var(--u))">${w.title}</div>
+      <div class="wanted-desc">${w.desc}</div>
+      <div class="budget-block">
+        <div class="budget-col">
+          <div class="budget-col-label">OFFERED BUDGET</div>
+          <div class="budget-col-val">${w.budget}</div>
+        </div>
+        <div class="budget-col">
+          <div class="budget-col-label">ACTIVITY</div>
+          <div class="budget-col-val" style="font-size:calc(11.5*var(--u));color:${w.actColor}">${w.activity}</div>
+        </div>
+      </div>
+      <button class="btn btn-primary btn-full">Offer Item to Student</button>
+    </div>
+  </div>`;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   VIEW 5 — SEARCH
+═══════════════════════════════════════════════════════════════ */
+const SEARCH_RESULTS = [
+  {title:'Campbell Biology 12th Ed. + BIO 1A Lab Manual Bundle',price:'$58',retail:'$210',badge:'SYLLABUS MATCH',badgeColor:'#065f46',grad:'linear-gradient(135deg,#4a7a5a,#2d5a3a)',seller:'Maya L.',initials:'ML',avCls:'avatar-ml',rating:'4.9',dist:'0.2mi',desc:'Complete bundle: textbook + official lab manual. Highlighted but all readable. Perfect for BIO 1A.'},
+  {title:'BIO 1A Dissection Kit & Precision Tweezers',price:'$15',retail:'$48',badge:'LAB REQUIRED',badgeColor:'#1d3fbf',grad:'linear-gradient(135deg,#5a7a9a,#3a5a7a)',seller:'David K.',initials:'DK',avCls:'avatar-dk',rating:'5.0',dist:'0.4mi',desc:'Full dissection kit in case. All tools present, clean and sanitized. Meets lab requirements.'},
+  {title:'Official Lab Coat Size Small',price:'$12',retail:'$55',badge:'OSHA COMPLIANT',badgeColor:'#8a3b12',grad:'linear-gradient(135deg,#d0c8b8,#a8a098)',seller:'Sarah T.',initials:'ST',avCls:'avatar-st',rating:'4.8',dist:'0.1mi',desc:'White lab coat, size S, lightly worn. OSHA-compliant for all Latimer Hall labs.'},
+  {title:'Biology 1A Complete Handwritten Study Guides & Exam Prep Flashcards',price:'$18',retail:null,badge:'INSTANT BUY',badgeColor:'#065f46',grad:'linear-gradient(135deg,#c8c090,#a8a070)',seller:'Alex R.',initials:'AR',avCls:'avatar-ar',rating:'5.0',dist:'0.3mi',desc:'Comprehensive study guides for all BIO 1A exams. Includes flashcard deck for lab practicals.',hasInstant:true},
+  {title:'Mini Centrifuge & Tube Rack',price:'$45',retail:'$120',badge:'LAB GRADE',badgeColor:'#1d3fbf',grad:'linear-gradient(135deg,#788090,#505870)',seller:'Jordan M.',initials:'JM',avCls:'avatar-jm',rating:'4.7',dist:'0.6mi',desc:'Mini centrifuge (6000 RPM max) + 24-slot tube rack. Tested and working, includes power adapter.'},
+  {title:'Biological Science 7th Edition',price:'$35',retail:'$180',badge:'COURSE TEXT',badgeColor:'#0c6b3e',grad:'linear-gradient(135deg,#4a6a4a,#2a4a2a)',seller:'Chloe B.',initials:'CB',avCls:'avatar-cb',rating:'4.9',dist:'0.5mi',desc:'Freeman Biological Science 7th Ed. Light highlighting only. Great condition for BIO 1A.'},
+];
+
+viewInits.search = function() {
+  const el = $('view-search');
+  el.innerHTML = `
+  <div class="content-col" style="padding-top:calc(24*var(--u))">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:calc(14*var(--u));flex-wrap:wrap;gap:8px">
+      <div style="font-size:calc(10.5*var(--u));color:var(--muted)">UC Berkeley / College of Letters &amp; Science / Department of Molecular &amp; Cell Biology / <strong>BIO 1A Catalog Hub</strong></div>
+      <span class="pill pill-mint" style="font-size:calc(9.5*var(--u))">✓ Catalog Synced: Spring 2025 Regular Session</span>
+    </div>
+
+    <div class="search-bar-wrap">
+      <span class="search-campus-chip">UC Berkeley</span>
+      <input class="search-input" type="text" value="Biology 1A lab manual and equipment" id="search-input">
+      <span class="search-hint">⌘K</span>
+      <button class="btn btn-primary btn-sm">Filter Match</button>
+      <button class="btn btn-ghost-dark btn-sm">Save Search Alert</button>
+      <button style="background:none;border:none;cursor:pointer;color:var(--muted)">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 8h8M8 4l4 4-4 4"/></svg>
+      </button>
+    </div>
+    <div style="display:flex;gap:calc(6*var(--u));flex-wrap:wrap;margin-bottom:calc(16*var(--u))">
+      <button class="tab-btn" style="border-bottom:2px solid transparent;padding:calc(8*var(--u)) calc(14*var(--u))">All Items 142</button>
+      <button class="tab-btn active" style="border-bottom:2px solid var(--navy);color:var(--navy);font-weight:800;padding:calc(8*var(--u)) calc(14*var(--u))">Course Materials 38</button>
+      <button class="tab-btn" style="padding:calc(8*var(--u)) calc(14*var(--u))">Dorm Goods 54</button>
+      <button class="tab-btn" style="padding:calc(8*var(--u)) calc(14*var(--u))">Electronics 27</button>
+      <button class="tab-btn" style="background:#fff3e0;color:var(--amber);border-radius:var(--r-pill);padding:calc(8*var(--u)) calc(14*var(--u));border:1px solid #fcd9a0">Free Box 8</button>
+      <button class="tab-btn" style="padding:calc(8*var(--u)) calc(14*var(--u))">Lab Gear 15</button>
+    </div>
+
+    <div class="syllabus-banner">
+      <div class="syllabus-text">
+        <strong>Course Syllabus Verification Active:</strong> These results have been matched with the official UC Berkeley Spring 2025 course catalog for BIO 1A.
+        &nbsp;·&nbsp; Prof. Jennifer Doudna &amp; Staff
+      </div>
+      <button class="btn btn-ghost-dark btn-sm">View Syllabus PDF</button>
+    </div>
+
+    <div class="search-layout">
+      <!-- Sidebar -->
+      <div class="search-sidebar">
+        <div class="sidebar-block">
+          <div class="sidebar-title">Course &amp; Syllabus Match <span class="pill pill-mint" style="font-size:calc(8.5*var(--u))">Active</span></div>
+          <select class="filter-select" style="width:100%;margin-bottom:calc(8*var(--u))"><option>Department: Molecular &amp; Cell Biology</option></select>
+          <select class="filter-select" style="width:100%;margin-bottom:calc(8*var(--u))"><option>Course Code: BIO 1A</option></select>
+          <div class="course-chips">
+            <span class="course-chip active">BIO 1A</span>
+            <span class="course-chip">CHEM 3B</span>
+            <span class="course-chip">MATH 53</span>
+            <span class="course-chip">CS 61B</span>
+          </div>
+          <select class="filter-select" style="width:100%;margin:calc(8*var(--u)) 0"><option>Instructor: Jennifer Doudna</option></select>
+          <select class="filter-select" style="width:100%"><option>Semester: Spring 2025</option></select>
+          <div class="sidebar-label" style="margin-top:calc(10*var(--u))">
+            <span class="sidebar-label-text">Strict Syllabus Match Only</span>
+            <label class="toggle-switch"><input type="checkbox" checked id="syllabus-toggle"><span class="toggle-track"></span></label>
+          </div>
+        </div>
+        <div class="sidebar-block">
+          <div class="sidebar-title">Campus Radius &amp; Hubs</div>
+          <div class="sidebar-checkbox-row">
+            <label class="sidebar-check"><input type="checkbox" checked> Moffitt Library</label>
+            <label class="sidebar-check"><input type="checkbox" checked> MLK Union</label>
+            <label class="sidebar-check"><input type="checkbox"> Unit 1 &amp; 2 Commons</label>
+            <label class="sidebar-check"><input type="checkbox"> Foothill</label>
+            <label class="sidebar-check"><input type="checkbox"> Soda Hall</label>
+          </div>
+        </div>
+        <div class="sidebar-block">
+          <div class="sidebar-title">Price Range</div>
+          <div class="price-range-labels"><span>$0</span><span id="price-max-label">$60</span></div>
+          <input type="range" class="range-input" min="0" max="200" value="60" id="price-range">
+        </div>
+        <div class="sidebar-block">
+          <div class="sidebar-title">Condition</div>
+          <div class="sidebar-checkbox-row">
+            <label class="sidebar-check"><input type="checkbox" checked> Like New <span style="color:var(--muted);margin-left:4px">(12)</span></label>
+            <label class="sidebar-check"><input type="checkbox" checked> Good <span style="color:var(--muted);margin-left:4px">(18)</span></label>
+            <label class="sidebar-check"><input type="checkbox" checked> Acceptable <span style="color:var(--muted);margin-left:4px">(10)</span></label>
+            <label class="sidebar-check"><input type="checkbox"> Any</label>
+          </div>
+        </div>
+        <div class="sidebar-block">
+          <div class="sidebar-title">Seller Credentials</div>
+          <div class="sidebar-radio-row">
+            <label class="sidebar-radio"><input type="radio" name="scred"> All Sellers</label>
+            <label class="sidebar-radio"><input type="radio" name="scred" checked> Verified .edu Only</label>
+            <label class="sidebar-radio"><input type="radio" name="scred"> Grad Students</label>
+            <label class="sidebar-radio"><input type="radio" name="scred"> Faculty</label>
+          </div>
+        </div>
+        <div class="sidebar-block">
+          <div class="sidebar-title">Handoff Speed</div>
+          <div class="sidebar-radio-row">
+            <label class="sidebar-radio"><input type="radio" name="hspeed"> Any</label>
+            <label class="sidebar-radio"><input type="radio" name="hspeed" checked> Same Day</label>
+            <label class="sidebar-radio"><input type="radio" name="hspeed"> Within 48h</label>
+            <label class="sidebar-radio"><input type="radio" name="hspeed"> This Week</label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Results -->
+      <div>
+        <div class="search-results-header">
+          <span class="results-count" id="results-count">Showing 48 Verified Results</span>
+          <span class="pill pill-blue">BIO 1A</span>
+          <select class="filter-select" id="sort-select" style="margin-left:auto"><option>Best Match</option><option>Price: Low to High</option><option>Price: High to Low</option><option>Distance</option></select>
+        </div>
+        <div class="active-filters">
+          <span style="font-size:calc(11*var(--u));color:var(--muted)">Active filters:</span>
+          <span class="filter-tag">BIO 1A <button onclick="this.parentElement.remove()">×</button></span>
+          <span class="filter-tag">Same Day <button onclick="this.parentElement.remove()">×</button></span>
+          <span class="filter-tag">$0–$60 <button onclick="this.parentElement.remove()">×</button></span>
+          <span class="filter-tag">Verified .edu <button onclick="this.parentElement.remove()">×</button></span>
+          <button style="background:none;border:none;color:var(--red);font-size:calc(11*var(--u));font-weight:700;cursor:pointer">Clear All</button>
+        </div>
+        <div id="search-results-list">
+          ${SEARCH_RESULTS.map((r,i) => searchResultCard(r,i)).join('')}
+        </div>
+        <div class="meetup-banner">
+          <div>
+            <div style="font-size:calc(13*var(--u));font-weight:700;color:var(--blue)">📍 24/7 Monitored Meetup Stations</div>
+            <div style="font-size:calc(11.5*var(--u));color:var(--muted)">All handoffs facilitated at blue-light monitored campus hubs</div>
+          </div>
+          <button class="btn btn-primary btn-sm">View Safe Exchange Map</button>
+        </div>
+        <div class="pagination">
+          <button class="page-btn">← Previous</button>
+          <button class="page-btn active">1</button>
+          <button class="page-btn">2</button>
+          <button class="page-btn">3</button>
+          <span style="color:var(--muted);padding:0 4px">…</span>
+          <button class="page-btn">8</button>
+          <button class="page-btn">Next Page →</button>
+        </div>
+      </div>
+    </div>
+  </div>`;
+
+  setupSearchFilters();
+  setupTabBars();
+  setupFadeUps();
+};
+
+function searchResultCard(r, i) {
+  return `<div class="search-result-card fade-up" style="transition-delay:${i*60}ms">
+    <div class="result-photo" style="background:${r.grad}">
+      ${photoBg(r.grad,'',r.title)}
+      <span style="position:absolute;top:calc(8*var(--u));left:calc(8*var(--u));background:${r.badgeColor};color:#fff;font-size:calc(8*var(--u));font-weight:800;text-transform:uppercase;letter-spacing:0.07em;padding:calc(2*var(--u)) calc(6*var(--u));border-radius:var(--r-pill);z-index:2">${r.badge}</span>
+    </div>
+    <div class="result-body">
+      <div class="result-price-row">
+        <div class="card-title" style="flex:1;padding-right:calc(10*var(--u))">${r.title}</div>
+        <div style="text-align:right;flex-shrink:0">
+          <div class="price-sm">${r.price}</div>
+          ${r.retail ? `<div class="struck">${r.retail}</div>` : ''}
+        </div>
+      </div>
+      <div class="result-meta">
+        <span class="chip chip-green">✓ BIO 1A</span>
+        <span class="chip chip-blue">Like New</span>
+        <span class="chip chip-grey">Same Day Pickup</span>
+      </div>
+      <div class="result-desc">${r.desc}</div>
+      <div class="result-seller-row">
+        ${avatarChip(r.initials, r.avCls)}
+        <div class="seller-rating">${svgStar} ${r.rating}</div>
+        <span class="seller-dist">${r.dist} away</span>
+        ${r.hasInstant ? `<button class="btn btn-success btn-sm" style="margin-left:auto">Instant Purchase (${r.price})</button>` : `<button class="btn btn-primary btn-sm" style="margin-left:auto">Message ${r.seller.split(' ')[0]}</button>`}
+        <button class="heart-btn" style="position:static;width:calc(28*var(--u));height:calc(28*var(--u));background:#f1f3fa">${svgHeart}</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function setupSearchFilters() {
+  const priceRange = $('price-range');
+  const priceLabel = $('price-max-label');
+  const countEl = $('results-count');
+  if (priceRange && priceLabel) {
+    priceRange.addEventListener('input', () => {
+      priceLabel.textContent = '$' + priceRange.value;
+      if (countEl) {
+        const frac = priceRange.value / 200;
+        countEl.textContent = `Showing ${Math.round(48*frac)} Verified Results`;
+      }
+    });
+  }
+  const sortSel = $('sort-select');
+  const listEl = $('search-results-list');
+  if (sortSel && listEl) {
+    sortSel.addEventListener('change', () => {
+      const cards = [...listEl.querySelectorAll('.search-result-card')];
+      if (sortSel.value.includes('Low to High')) {
+        cards.sort((a,b) => parseInt(a.querySelector('.price-sm').textContent.replace('$','')) - parseInt(b.querySelector('.price-sm').textContent.replace('$','')));
+      } else if (sortSel.value.includes('High to Low')) {
+        cards.sort((a,b) => parseInt(b.querySelector('.price-sm').textContent.replace('$','')) - parseInt(a.querySelector('.price-sm').textContent.replace('$','')));
+      }
+      cards.forEach(c => listEl.appendChild(c));
+    });
+  }
+  document.querySelectorAll('.course-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      document.querySelectorAll('.course-chip').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+    });
+  });
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   VIEW 6 — WISHLIST
+═══════════════════════════════════════════════════════════════ */
+const WISHLIST_ITEMS = [
+  {grad:'linear-gradient(135deg,#c8a060,#8a6030)',initials:'CB',avCls:'avatar-cb',seller:'Chloe B.',price:'$42',drop:'Dropped $10 (3h ago)',dropCls:'price-drop-green',hub:'Latimer Hall Courtyard',label:'TEXTBOOK',condition:'Good — Light Highlighting',title:'Organic Chemistry Structure & Function',desc:'Vollhardt & Schore, 8th Ed. Perfect for Chem 3A.',btn1:'Buy / Hold Escrow',btn1Cls:'btn-success',btn2:'Message Chloe'},
+  {grad:'linear-gradient(135deg,#2c3e6b,#1a2545)',initials:'AR',avCls:'avatar-ar',seller:'Alex R.',price:'$110',drop:'$30 Price Reduction',dropCls:'price-drop-green',hub:'Soda Hall CS Commons',label:'ELECTRONICS',condition:'Like New — Original Box',title:'Bose QuietComfort 45 Noise-Canceling',desc:'Full noise cancellation, 24h battery, all accessories.',btn1:'Buy / Hold Escrow',btn1Cls:'btn-primary',btn2:'Message Alex'},
+  {grad:'linear-gradient(135deg,#c89060,#8a5020)',initials:'JM',avCls:'avatar-jm',seller:'Jordan M.',price:'$25',drop:'Dropped $8 (1d ago)',dropCls:'price-drop-green',hub:'Foothill Complex',label:'APPLIANCE',condition:'Good — Working Perfectly',title:'Keurig K-Mini Single Serve Brewer',desc:'Compact, works great, includes 10 pods to start.',btn1:'Buy / Hold Escrow',btn1Cls:'btn-success',btn2:'Message Jordan'},
+  {grad:'linear-gradient(135deg,#b89060,#785030)',initials:'ST',avCls:'avatar-st',seller:'Sarah T.',price:'$50',drop:'Price Alert Active',dropCls:'price-drop-amber',hub:'Stern Hall',label:'CALCULATOR',condition:'Good — With Charger Cable',title:'TI-84 Plus Silver Edition Calculator',desc:'Full color screen, OS updated. Ideal for MATH 53.',btn1:'Set Price Alert',btn1Cls:'btn-primary',btn2:'Message Sarah'},
+  {grad:'linear-gradient(135deg,#9ab8d4,#6a90b0)',initials:'ML',avCls:'avatar-ml',seller:'Maya L.',price:'$18',drop:'Dropped $5 (6h ago)',dropCls:'price-drop-green',hub:'Unit 1 Commons',label:'FURNITURE',condition:'Good — Minor Scuff',title:'Target 3-Tier Rolling Utility Cart',desc:'Rolls smoothly, holds everything. Great dorm organizer.',btn1:'Buy / Hold Escrow',btn1Cls:'btn-success',btn2:'Message Maya'},
+  {grad:'linear-gradient(135deg,#8898b8,#5060a0)',initials:'MW',avCls:'avatar-mw',seller:'Marcus W.',price:'$40',drop:'$12 Price Reduction',dropCls:'price-drop-green',hub:'Southside Co-ops',label:'CLOTHING',condition:'Like New — Size M',title:'Patagonia Better Sweater Quarter-Zip',desc:'Grey, size M, worn twice. Campus staple.',btn1:'Buy / Hold Escrow',btn1Cls:'btn-primary',btn2:'Message Marcus'},
+];
+
+viewInits.wishlist = function() {
+  const el = $('view-wishlist');
+  el.innerHTML = `
+  <div class="content-col" style="padding-top:calc(24*var(--u))">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:calc(6*var(--u))">
+      <span style="font-size:calc(11*var(--u));color:var(--muted)">UC Berkeley › Student Commons › Wishlist &amp; Alerts</span>
+      <button class="btn btn-ghost-dark btn-sm">Share with Roommate / Group</button>
+    </div>
+    <div class="micro-label" style="margin-bottom:calc(8*var(--u))">LIVE PEER PRICE RADAR • FALL SEMESTER</div>
+    <h1 style="margin-bottom:calc(8*var(--u))">My Campus Wishlist &amp; Saved Alerts</h1>
+    <p style="font-size:calc(13*var(--u));color:var(--muted);margin-bottom:calc(24*var(--u))">Track course textbooks, dorm essentials, and upcoming move-out deals. Get notified the second a peer lists an item you need on Berkeley grounds.</p>
+
+    <div class="stats-row-wl">
+      <div class="wl-stat-card">
+        <div class="micro-label">TRACKED GEAR &amp; BOOKS</div>
+        <div class="wl-stat-num">6 Saved Items</div>
+      </div>
+      <div class="wl-stat-card mint">
+        <div class="micro-label">2 PRICE DROPS ACTIVE</div>
+        <div class="wl-stat-num">● $35 Saved Potential</div>
+      </div>
+      <div class="wl-stat-card">
+        <div class="micro-label">AUTOMATED ALERTS</div>
+        <div class="wl-stat-num">3 Course Watchlists</div>
+        <div style="display:flex;gap:calc(5*var(--u));margin-top:calc(8*var(--u));flex-wrap:wrap">
+          <span class="pill pill-blue" style="font-size:calc(9*var(--u))">MATH 53</span>
+          <span class="pill pill-blue" style="font-size:calc(9*var(--u))">CHEM 3A</span>
+          <span class="pill pill-blue" style="font-size:calc(9*var(--u))">CS 61A</span>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;align-items:center;gap:calc(8*var(--u));margin-bottom:calc(20*var(--u));border-bottom:1.5px solid var(--border);padding-bottom:calc(14*var(--u));flex-wrap:wrap">
+      <button class="tab-btn active">All Saved Listings (6)</button>
+      <button class="tab-btn">Price Drop Alerts 2</button>
+      <button class="tab-btn">Course Watchlists (3)</button>
+      <button class="tab-btn">Recently Viewed</button>
+      <select class="filter-select" style="margin-left:auto"><option>Sort: Recently Saved</option><option>Price: Low to High</option><option>Biggest Drop</option></select>
+    </div>
+
+    <div class="wishlist-layout">
+      <div>
+        <div class="wishlist-grid" id="wishlist-grid">
+          ${WISHLIST_ITEMS.map((w,i) => wishlistCard(w,i)).join('')}
+        </div>
+
+        <div class="watchlist-section">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:calc(16*var(--u))">
+            <h2>Active Course Watchlists</h2>
+            <button class="btn btn-primary btn-sm">Track New Class</button>
+          </div>
+          <div class="watchlist-cards">
+            ${[
+              {course:'CS 61A',title:'Structure and Interpretation of Computer Programs',max:'$25.00',notifs:['2 new matches today','Price drop: $22 seen']},
+              {course:'PHYSICS 7A',title:'Physics for Scientists and Engineers',max:'$40.00',notifs:['1 new match today','Avg price: $38']},
+            ].map((wl,i)=>`<div class="watchlist-card fade-up">
+              <div style="display:flex;align-items:center;gap:calc(10*var(--u));margin-bottom:calc(10*var(--u))">
+                <span class="pill pill-blue" style="font-size:calc(10*var(--u))">${wl.course}</span>
+                <span class="pill pill-mint" style="font-size:calc(9*var(--u))">● Monitoring</span>
+              </div>
+              <div class="card-title" style="margin-bottom:calc(4*var(--u))">${wl.title}</div>
+              <div style="font-size:calc(11*var(--u));color:var(--muted)">Max price alert: <strong style="color:var(--navy)">≤ ${wl.max}</strong></div>
+              <div class="wl-notif-items">
+                ${wl.notifs.map(n=>`<div class="wl-notif-item"><span style="color:#22c55e">●</span>${n}</div>`).join('')}
+              </div>
+              <div class="wl-notify-row">
+                <span class="wl-toggle-label">Auto-Notify: <strong id="wl-toggle-label-${i}">On</strong></span>
+                <label class="toggle-switch">
+                  <input type="checkbox" checked id="wl-toggle-${i}">
+                  <span class="toggle-track"></span>
+                </label>
+              </div>
+              <div class="wl-icons">
+                <button class="wl-icon-btn" title="Edit">${svgEdit}</button>
+                <button class="wl-icon-btn" title="Delete" style="color:var(--red)">${svgTrash}</button>
+              </div>
+            </div>`).join('')}
+          </div>
+        </div>
+      </div>
+
+      <!-- Rail -->
+      <div class="wishlist-rail">
+        <div class="rail-card" style="background:var(--amber-bg);border-color:#fcd9a0">
+          <div class="rail-card-title" style="color:var(--amber)">MARKET INTELLIGENCE / End-of-Semester Alert</div>
+          <p style="font-size:calc(11*var(--u));color:var(--body-text)">Prices drop 30–50% in Finals Week. Set your target bids now.</p>
+          <div style="display:flex;align-items:flex-end;gap:calc(5*var(--u));height:calc(60*var(--u));margin:calc(12*var(--u)) 0">
+            ${[{h:30,l:'Mar'},{h:45,l:'Apr'},{h:65,l:'May'},{h:90,l:'Finals'}].map(b=>`
+              <div style="flex:1;display:flex;flex-direction:column;align-items:center">
+                <div style="width:100%;height:${b.h}%;background:var(--amber);border-radius:calc(4*var(--u)) calc(4*var(--u)) 0 0;opacity:0.8"></div>
+                <div style="font-size:calc(8*var(--u));color:var(--muted);margin-top:calc(3*var(--u))">${b.l}</div>
+              </div>`).join('')}
+          </div>
+          <button class="btn btn-amber-border btn-full btn-sm">Set Target Move-Out Bids</button>
+        </div>
+
+        <div class="rail-card">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:calc(10*var(--u))">
+            <div class="rail-card-title">Safe Meetup Hubs</div>
+            <span class="pill pill-mint" style="font-size:calc(8.5*var(--u))">Monitored</span>
+          </div>
+          <div class="hub-list">
+            ${[['Moffitt Library','3 items'],['MLK Union','2 items'],['Clark Kerr','1 item']].map(([h,c])=>`
+            <div class="hub-list-item"><span>${h}</span><span class="hub-count-pill">${c}</span></div>`).join('')}
+          </div>
+          <div class="map-tile">${svgMap}</div>
+          <a href="#verify" style="font-size:calc(11*var(--u));font-weight:700;color:var(--blue);display:block;margin-top:calc(10*var(--u));text-align:center">View Campus Meetup Map →</a>
+        </div>
+
+        <div class="rail-card">
+          <div class="rail-card-title">Campus Escrow Hold</div>
+          <span class="pill pill-mint" style="margin-bottom:calc(8*var(--u));display:inline-flex">✓ 100% Student Refund Guarantee</span>
+          <p style="font-size:calc(11*var(--u));color:var(--muted)">Funds are held securely until you physically inspect and approve the item at a campus hub. Zero-risk handoffs guaranteed.</p>
+        </div>
+      </div>
+    </div>
+  </div>`;
+
+  setupTabBars();
+  setupWishlistToggles();
+  setupFadeUps();
+  setTimeout(() => heroEntrance(el), 50);
+};
+
+function wishlistCard(w, i) {
+  return `<div class="wishlist-card fade-up" style="transition-delay:${i*60}ms">
+    <div class="wcard-photo" style="background:${w.grad}">
+      ${photoBg(w.grad,'',w.title)}
+      <div class="wcard-seller-chip">${avatarChip(w.initials,w.avCls).replace('class="avatar','class="avatar" style="width:calc(18*var(--u));height:calc(18*var(--u))')} ${w.seller}</div>
+      <div class="wcard-price-tag">${w.price}</div>
+      <div class="price-drop-pill ${w.dropCls}">${w.drop}</div>
+    </div>
+    <div class="wcard-body">
+      <div class="micro-label" style="margin-bottom:calc(2*var(--u))">${w.label}</div>
+      <div style="font-size:calc(10.5*var(--u));color:var(--muted);margin-bottom:calc(6*var(--u))">${w.condition}</div>
+      <div class="card-title" style="margin-bottom:calc(4*var(--u))">${w.title}</div>
+      <div style="font-size:calc(11*var(--u));color:var(--muted);margin-bottom:calc(10*var(--u))">${w.desc}</div>
+      <div class="wcard-btn-row">
+        <button class="btn ${w.btn1Cls} btn-sm" style="flex:1">${w.btn1}</button>
+        <button class="btn btn-ghost-dark btn-sm" style="flex:1">${w.btn2}</button>
+      </div>
+      <button class="wcard-remove">Remove from Wishlist</button>
+    </div>
+  </div>`;
+}
+
+function setupWishlistToggles() {
+  [0,1].forEach(i => {
+    const toggle = $(`wl-toggle-${i}`);
+    const label = $(`wl-toggle-label-${i}`);
+    if (toggle && label) {
+      toggle.addEventListener('change', () => {
+        label.textContent = toggle.checked ? 'On' : 'Off';
+      });
+    }
+  });
+  document.querySelectorAll('.wcard-remove').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const card = btn.closest('.wishlist-card');
+      if (card) { card.style.opacity='0'; card.style.transform='scale(0.95)'; setTimeout(()=>card.remove(),300); }
+    });
+  });
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   VIEW 7 — ABOUT
+═══════════════════════════════════════════════════════════════ */
+viewInits.about = function() {
+  const el = $('view-about');
+  el.innerHTML = `
+  <div class="about-hero">
+    <div class="content-col" style="text-align:center">
+      <span class="pill pill-mint" style="margin-bottom:calc(16*var(--u));display:inline-flex" data-enter>🎓 UC Berkeley Chapter · Est. 2022</span>
+      <h1 data-enter>About CampusZon</h1>
+      <p class="hero-p" style="margin:calc(16*var(--u)) auto;text-align:center;max-width:calc(560*var(--u))" data-enter>The verified-only student marketplace built for UC Berkeley — no strangers, no shipping, no sketches.</p>
+      <div style="display:flex;gap:calc(12*var(--u));justify-content:center;flex-wrap:wrap;margin-top:calc(20*var(--u))" data-enter>
+        <button class="btn btn-primary">Join the Campus Commons</button>
+        <a href="#verify" class="btn btn-ghost-dark">Learn About Verification</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="content-col">
+    <div class="section">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:calc(40*var(--u));align-items:center">
+        <div>
+          <div class="micro-label" style="margin-bottom:calc(10*var(--u))">OUR MISSION</div>
+          <h2 style="margin-bottom:calc(16*var(--u))">Peer commerce that's safe by design.</h2>
+          <p style="color:var(--muted);line-height:1.7;margin-bottom:calc(16*var(--u))">CampusZon was founded by UC Berkeley students who were tired of risky Craigslist meetups, overpriced campus stores, and buying textbooks they'd never open again. We built a closed-loop system where every user is cryptographically verified before they can list, buy, or message.</p>
+          <p style="color:var(--muted);line-height:1.7">Every transaction happens inside a designated campus safe zone — blue-light monitored, CCTV-covered, and staff-adjacent. Campus Escrow holds funds until both parties confirm the exchange. No cash, no strangers, no stress.</p>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:calc(14*var(--u))">
+          ${[['3,420','Active Listings on Campus'],['15,420','Verified Berkeley Students'],['98%','On-Campus Handoff Rate']].map(([n,l])=>`
+          <div class="stat-card fade-up" style="text-align:left">
+            <div class="stat-num">${n}</div>
+            <div class="stat-label">${l}</div>
+          </div>`).join('')}
+        </div>
+      </div>
+    </div>
+
+    <div class="section-sm">
+      <div class="micro-label" style="text-align:center;margin-bottom:calc(10*var(--u))">HOW IT WORKS</div>
+      <h2 style="text-align:center;margin-bottom:calc(24*var(--u))">Four steps to a safe campus exchange</h2>
+      <div class="about-steps">
+        ${[
+          {n:1,title:'Register with .edu',desc:'Sign up with your @berkeley.edu email. No personal data beyond what your registrar already holds.'},
+          {n:2,title:'Verify Your Identity',desc:'Complete our 3-step cryptographic verification. Takes under 5 minutes with your student ID.'},
+          {n:3,title:'Browse & Post',desc:'List items in seconds. Browse 3,400+ verified listings filtered by course, dorm, or major.'},
+          {n:4,title:'Meet Safely On Campus',desc:'Choose from 14 blue-light monitored hubs. Campus Escrow protects every transaction.'},
+        ].map(s=>`<div class="about-step fade-up">
+          <div class="about-step-num">${s.n}</div>
+          <div class="card-title" style="margin-bottom:calc(6*var(--u))">${s.title}</div>
+          <div style="font-size:calc(11.5*var(--u));color:var(--muted)">${s.desc}</div>
+        </div>`).join('')}
+      </div>
+    </div>
+
+    <div class="section-sm">
+      <div class="micro-label" style="text-align:center;margin-bottom:calc(10*var(--u))">BUILT BY STUDENTS</div>
+      <h2 style="text-align:center;margin-bottom:calc(4*var(--u))">Built by Berkeley Students, for Berkeley Students</h2>
+      <p style="text-align:center;color:var(--muted);max-width:calc(500*var(--u));margin:0 auto calc(24*var(--u))">Our founding team graduated from EECS, Haas, and MCB. We've been in your shoes.</p>
+      <div class="values-grid">
+        ${[
+          {title:'Safety First',desc:'Every hub is blue-light monitored. Every user is cryptographically verified. Every exchange is escrow-protected.'},
+          {title:'.edu Only',desc:'No public access. No bots. No off-campus strangers. Your closed campus circle, nothing more.'},
+          {title:'Zero Fees',desc:'We charge zero transaction fees. The platform is funded by optional premium seller boosts.'},
+          {title:'Campus-Anchored',desc:'All meetups happen inside university boundaries. No parking lots, no coffee shops, no off-campus risks.'},
+        ].map(v=>`<div class="value-card fade-up">
+          <div class="value-icon">${svgShield.replace(/width="[^"]*" height="[^"]*"/, 'width="20" height="20"')}</div>
+          <div class="card-title" style="margin-bottom:calc(6*var(--u))">${v.title}</div>
+          <div style="font-size:calc(11.5*var(--u));color:var(--muted)">${v.desc}</div>
+        </div>`).join('')}
+      </div>
+    </div>
+
+    <div class="safety-banner fade-up" style="margin:calc(32*var(--u)) 0">
+      <div class="safety-banner-text">
+        <h2>Ready to join the commons?</h2>
+        <p>Start buying and selling with 15,000+ verified Berkeley students. It takes less than 5 minutes to verify and list your first item.</p>
+        <div class="safety-banner-btns">
+          <button class="btn" style="background:#fff;color:var(--blue)">Get Verified Now</button>
+          <button class="btn btn-ghost">Contact Us: campuszon@berkeley.edu</button>
+        </div>
+      </div>
+      <div class="shield-watermark">${svgShield.replace(/width="[^"]*" height="[^"]*"/, '')}</div>
+    </div>
+  </div>`;
+
+  setupFadeUps();
+  setTimeout(() => heroEntrance(el), 50);
+};
+
+/* Parallax shield drift */
+window.addEventListener('scroll', () => {
+  const shield = document.querySelector('.shield-watermark');
+  if (shield) shield.style.transform = `translateY(calc(-50% + ${window.scrollY*0.06}px))`;
+}, {passive:true});
+
+</script>
+</body>
+</html>

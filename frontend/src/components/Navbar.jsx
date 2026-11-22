@@ -1,210 +1,125 @@
-import React, { useState } from 'react';
-import { 
-  ShieldCheck, 
-  Search, 
-  PlusCircle, 
-  Bell, 
-  MapPin, 
-  ChevronDown, 
-  Sparkles,
-  BookOpen,
-  GraduationCap,
-  Layers,
-  Heart,
-  UserCheck,
-  FileText
-} from 'lucide-react';
-import { CAMPUS_OPTIONS, CURRENT_USER } from '../data/mockData';
+import { useEffect, useState } from 'react';
+import CampusSelector from './CampusSelector';
+import LogoMark from './LogoMark';
+import { CURRENT_USER } from '../data/mockData';
 
-export default function Navbar({ 
-  activeTab, 
-  setActiveTab, 
-  onOpenPostModal, 
-  wishlistCount, 
-  selectedCampus, 
-  setSelectedCampus,
-  onOpenNotification 
-}) {
-  const [campusDropdownOpen, setCampusDropdownOpen] = useState(false);
+const NAV_ITEMS = [
+  { id: 'marketplace', label: 'Marketplace' },
+  { id: 'bundles', label: 'Move-Out Bundles', isNew: true },
+  { id: 'wanted', label: 'Wanted Board' },
+  { id: 'advanced-search', label: 'Advanced Search' },
+  { id: 'wishlist', label: 'Wishlist' },
+  { id: 'verification', label: 'Student Verification' },
+  { id: 'synopsis', label: 'Synopsis' },
+];
 
-  const navItems = [
-    { id: 'marketplace', label: 'Marketplace', icon: Layers },
-    { id: 'wanted', label: 'Wanted Board', icon: Sparkles, badge: '8 New' },
-    { id: 'advanced-search', label: 'Advanced Search', icon: Search },
-    { id: 'wishlist', label: 'Wishlist', icon: Heart, count: wishlistCount },
-    { id: 'verification', label: 'Student Verification', icon: UserCheck, verified: true },
-    { id: 'bundles', label: 'Move-Out Bundles', icon: GraduationCap, badge: 'May 10-22' },
-    { id: 'synopsis', label: 'Project Synopsis', icon: FileText, highlight: true },
-  ];
+export default function Navbar({ activeTab, setActiveTab, onOpenPostModal, wishlistCount, onOpenNotification }) {
+  const [scrolled, setScrolled] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 8);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  const go = (id) => {
+    setActiveTab(id);
+    setMenuOpen(false);
+    window.scrollTo({ top: 0 });
+  };
+
+  const initials = CURRENT_USER.name
+    .split(' ')
+    .map((w) => w[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase();
+
+  const renderLink = (item, withExtras) => (
+    <button key={item.id} type="button" className={`nav-link${activeTab === item.id ? ' active' : ''}`} onClick={() => go(item.id)}>
+      {item.label}
+      {withExtras && item.isNew && <span className="new-tag">New</span>}
+      {withExtras && item.id === 'wishlist' && wishlistCount > 0 && <span className="count-tag">{wishlistCount}</span>}
+    </button>
+  );
 
   return (
-    <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-xs">
-      {/* Main Navigation Bar */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-18 gap-3">
-          
-          {/* Brand Logo & Campus Selector */}
-          <div className="flex items-center gap-4">
-            <div 
-              onClick={() => setActiveTab('marketplace')} 
-              className="flex items-center gap-2 cursor-pointer group"
-            >
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-900 via-indigo-900 to-slate-900 flex items-center justify-center text-white shadow-md shadow-blue-900/20 group-hover:scale-105 transition-transform">
-                <GraduationCap className="w-6 h-6 text-amber-400" />
-              </div>
-              <div className="flex flex-col">
-                <span className="text-2xl font-black tracking-tight text-slate-900 flex items-center">
-                  Campus<span className="text-blue-700">Zon</span>
-                </span>
-                <span className="text-[10px] uppercase font-bold tracking-widest text-slate-500 -mt-1">
-                  Verified Peer Exchange
-                </span>
-              </div>
-            </div>
+    <>
+      <header className={`header${scrolled ? ' scrolled' : ''}`} id="main-header">
+        <div className="header-inner">
+          <button type="button" className="logo-wrap" onClick={() => go('marketplace')} aria-label="CampusZon home">
+            <LogoMark />
+            <span className="logo-word">CampusZon</span>
+          </button>
 
-            {/* Campus Selector Dropdown */}
-            <div className="relative hidden md:block">
-              <button 
-                onClick={() => setCampusDropdownOpen(!campusDropdownOpen)}
-                className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 hover:bg-slate-200/80 rounded-lg text-xs font-semibold text-slate-700 transition-colors border border-slate-200"
-              >
-                <MapPin className="w-3.5 h-3.5 text-blue-700" />
-                <span className="max-w-[150px] truncate">{selectedCampus}</span>
-                <ChevronDown className="w-3.5 h-3.5 text-slate-500" />
-              </button>
-
-              {campusDropdownOpen && (
-                <div className="absolute left-0 mt-2 w-64 bg-white rounded-xl shadow-xl border border-slate-200 py-2 z-50">
-                  <div className="px-3 py-1.5 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-                    Select University
-                  </div>
-                  {CAMPUS_OPTIONS.map((campus) => (
-                    <button
-                      key={campus}
-                      onClick={() => {
-                        setSelectedCampus(campus);
-                        setCampusDropdownOpen(false);
-                      }}
-                      className={`w-full text-left px-3 py-2 text-xs hover:bg-blue-50 transition-colors flex items-center justify-between ${
-                        selectedCampus === campus ? 'font-bold text-blue-700 bg-blue-50/60' : 'text-slate-700'
-                      }`}
-                    >
-                      <span>{campus}</span>
-                      {selectedCampus === campus && <span className="w-1.5 h-1.5 rounded-full bg-blue-700"></span>}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
+          <div className="hide-mobile">
+            <CampusSelector />
           </div>
 
-          {/* Navigation Links (Desktop) */}
-          <nav className="hidden lg:flex items-center gap-1">
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = activeTab === item.id;
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => setActiveTab(item.id)}
-                  className={`relative flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold transition-all ${
-                    isActive
-                      ? 'bg-blue-900 text-white shadow-xs'
-                      : item.highlight
-                      ? 'bg-amber-50 text-amber-900 border border-amber-300 hover:bg-amber-100'
-                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-                  }`}
-                >
-                  <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-amber-300' : item.highlight ? 'text-amber-600' : 'text-slate-500'}`} />
-                  <span>{item.label}</span>
+          <nav className="nav-links">{NAV_ITEMS.map((item) => renderLink(item, true))}</nav>
 
-                  {item.badge && (
-                    <span className="ml-1 text-[10px] px-1.5 py-0.2 rounded-full bg-emerald-500 text-white font-bold">
-                      {item.badge}
-                    </span>
-                  )}
-                  {item.count !== undefined && item.count > 0 && (
-                    <span className={`ml-1 text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
-                      isActive ? 'bg-amber-400 text-blue-950' : 'bg-blue-100 text-blue-800'
-                    }`}>
-                      {item.count}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
-          </nav>
+          <div className="header-right">
+            <button type="button" className="btn-post" onClick={onOpenPostModal}>
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                <path d="M7 1v12M1 7h12" />
+              </svg>
+              <span className="btn-post-text">Post an Item</span>
+            </button>
+            <button type="button" className="bell-btn" onClick={onOpenNotification} aria-label="Notifications">
+              <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
+                <path d="M9 1a5 5 0 0 1 5 5v3l1.5 2.5H2.5L4 9V6a5 5 0 0 1 5-5zM7 15.5a2 2 0 0 0 4 0" />
+              </svg>
+              <span className="bell-dot" />
+            </button>
+            <div className="profile-wrap" onClick={() => go('verification')} title="Student verification & ID status">
+              <div className="profile-avatar">{initials}</div>
+              <div className="verified-badge-sm">
+                <svg viewBox="0 0 7 7" fill="none" stroke="#fff" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M1.5 3.5l1.5 1.5 2.5-3" />
+                </svg>
+              </div>
+            </div>
+            <button type="button" className="hamburger" aria-label="Menu" onClick={() => setMenuOpen(true)}>
+              <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+                <path d="M2 5h16M2 10h16M2 15h16" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </header>
 
-          {/* Right Action Bar */}
-          <div className="flex items-center gap-3">
-            {/* Post an Item CTA Button */}
+      {/* Mobile menu */}
+      <div className={`mobile-menu${menuOpen ? ' open' : ''}`} onClick={() => setMenuOpen(false)}>
+        <div className="mobile-sheet" onClick={(e) => e.stopPropagation()}>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 16 }}>
             <button
-              onClick={onOpenPostModal}
-              className="flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-blue-700 to-indigo-800 hover:from-blue-800 hover:to-indigo-900 text-white text-xs font-bold rounded-lg shadow-sm hover:shadow-md transition-all active:scale-95 cursor-pointer"
+              type="button"
+              onClick={() => setMenuOpen(false)}
+              style={{ background: '#f1f3fa', borderRadius: '50%', width: 32, height: 32, fontSize: 18 }}
+              aria-label="Close menu"
             >
-              <PlusCircle className="w-4 h-4 text-amber-300" />
-              <span>Post an Item</span>
+              ✕
             </button>
-
-            {/* Notification Bell */}
-            <button 
-              onClick={onOpenNotification}
-              className="relative p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
-              title="Notifications"
+          </div>
+          <div style={{ marginBottom: 12 }}>
+            <CampusSelector />
+          </div>
+          {NAV_ITEMS.map((item) => renderLink(item, false))}
+          <div style={{ marginTop: 16 }}>
+            <button
+              type="button"
+              className="btn btn-primary btn-full"
+              onClick={() => {
+                setMenuOpen(false);
+                onOpenPostModal();
+              }}
             >
-              <Bell className="w-4 h-4" />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500 ring-2 ring-white"></span>
+              ⊕ Post an Item
             </button>
-
-            {/* User Profile Pill */}
-            <div 
-              onClick={() => setActiveTab('verification')}
-              className="flex items-center gap-2 pl-2 border-l border-slate-200 cursor-pointer group"
-              title="View Student Verification & ID status"
-            >
-              <div className="relative">
-                <img
-                  src={CURRENT_USER.avatar}
-                  alt={CURRENT_USER.name}
-                  className="w-8 h-8 rounded-full object-cover ring-2 ring-emerald-500/80"
-                />
-                <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 rounded-full border border-white"></span>
-              </div>
-              <div className="hidden xl:flex flex-col text-left">
-                <div className="flex items-center gap-1 text-xs font-bold text-slate-900 group-hover:text-blue-700">
-                  <span>{CURRENT_USER.name}</span>
-                  <span className="text-[10px] px-1 bg-emerald-100 text-emerald-800 font-bold rounded">.edu</span>
-                </div>
-                <span className="text-[10px] text-slate-500">Haas School of Business</span>
-              </div>
-            </div>
-
           </div>
         </div>
-
-        {/* Mobile Horizontal Navigation Strip */}
-        <div className="lg:hidden flex items-center gap-1 overflow-x-auto py-2 border-t border-slate-100 scrollbar-none">
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = activeTab === item.id;
-            return (
-              <button
-                key={item.id}
-                onClick={() => setActiveTab(item.id)}
-                className={`whitespace-nowrap flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold ${
-                  isActive
-                    ? 'bg-blue-900 text-white'
-                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                }`}
-              >
-                <Icon className="w-3.5 h-3.5" />
-                <span>{item.label}</span>
-              </button>
-            );
-          })}
-        </div>
-
       </div>
-    </header>
+    </>
   );
 }

@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
+import api from '../services/api';
 import { 
   GraduationCap, 
   Sparkles, 
@@ -273,14 +274,17 @@ export default function MoveOutBundlesPage({ onTriggerEscrow, onOpenPostModal })
                 </div>
 
                 <button
-                  onClick={() => onTriggerEscrow({
-                    title: bundle.title,
-                    price: bundle.price,
-                    meetupLocation: bundle.location,
-                    image: bundle.image,
-                    condition: "Move-Out Bundle Lot",
-                    seller: { name: bundle.seller }
-                  })}
+                  onClick={() => {
+                    api.claimBundle(bundle.id).catch(err => console.warn('Bundle claim API sync:', err.message));
+                    onTriggerEscrow({
+                      title: bundle.title,
+                      price: bundle.price,
+                      meetupLocation: bundle.location,
+                      image: bundle.image,
+                      condition: "Move-Out Bundle Lot",
+                      seller: { name: bundle.seller }
+                    });
+                  }}
                   className="w-full py-2.5 bg-blue-900 hover:bg-blue-800 text-white rounded-xl font-bold text-xs shadow-md transition-all flex items-center justify-center gap-1.5 cursor-pointer"
                 >
                   <Lock className="w-3.5 h-3.5 text-amber-400" />
