@@ -1,13 +1,15 @@
 const app = require('./app');
 
 // In-memory mock HTTP test runner that bypasses socket network layer
-const createMockReqRes = (method, url, body = null) => {
+const createMockReqRes = (method, url, body = null, token = null) => {
   const { EventEmitter } = require('events');
 
   const req = new EventEmitter();
   req.method = method;
   req.url = url;
   req.headers = { 'content-type': 'application/json' };
+  if (token) req.headers.authorization = `Bearer ${token}`;
+  req.socket = { remoteAddress: '127.0.0.1' };
   req.body = body;
 
   const res = new EventEmitter();
@@ -62,7 +64,7 @@ const createMockReqRes = (method, url, body = null) => {
 };
 
 const runDirectTests = async () => {
-  console.log('Testing CampusZon Express MVC API persistence & endpoints...');
+  console.log('Testing CampusXchange Express MVC API persistence & endpoints...');
 
   let passed = 0;
   let failed = 0;
@@ -77,6 +79,23 @@ const runDirectTests = async () => {
       failed++;
     }
   };
+
+  // Writes now need a login: sign up a throwaway test student first
+  let token = null;
+  await test('POST /api/auth/signup creates a test student', async () => {
+    const { execute } = createMockReqRes('POST', '/api/auth/signup', {
+      name: 'API Tester',
+      email: `api.tester.${Date.now()}@berkeley.edu`,
+      password: 'tester-pass-123',
+      universityName: 'UC Berkeley',
+      rollNo: `T-${Date.now()}`,
+      idProofImage: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
+      idProofName: 'id.png'
+    });
+    const res = await execute();
+    if (res.status !== 201 || !res.body.data?.token) throw new Error(`Signup returned ${res.status}`);
+    token = res.body.data.token;
+  });
 
   // 1. Health check
   await test('GET /api/health', async () => {
@@ -106,7 +125,7 @@ const runDirectTests = async () => {
       courseCode: 'CHEM 1A',
       meetupLocation: 'Latimer Hall Steps',
       condition: 'Like New'
-    });
+    }, token);
     const res = await execute();
     if (!res.ok || !res.body.data?.title) throw new Error(`Create listing returned ${res.status}`);
   });
@@ -125,7 +144,7 @@ const runDirectTests = async () => {
   await test('PATCH /api/listings/:id/wishlist toggles item wishlist status to true', async () => {
     const { execute } = createMockReqRes('PATCH', `/api/listings/${createdCustomId}/wishlist`, {
       isWishlisted: true
-    });
+    }, token);
     const res = await execute();
     if (!res.ok || res.body.isWishlisted !== true) throw new Error('Toggle wishlist failed');
   });

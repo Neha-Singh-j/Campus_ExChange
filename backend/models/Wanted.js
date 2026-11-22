@@ -30,8 +30,10 @@ const wantedSchema = new mongoose.Schema(
       enum: ['course', 'dorm', 'electronics', 'moving', 'gear', 'study_rides'],
       default: 'course'
     },
+    userId: { type: String, default: null },
     offers: [
       {
+        offeredById: { type: String, default: null },
         offeredBy: { type: String, default: 'Anonymous Cal Student' },
         amount: { type: Number },
         message: { type: String },

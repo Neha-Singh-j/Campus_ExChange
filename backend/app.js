@@ -34,7 +34,8 @@ const corsOptions = {
 app.use(cors(corsOptions));
 
 // Body parsing middlewares
-app.use(express.json());
+// 3mb so the (already shrunk) student ID photo can be sent as part of signup
+app.use(express.json({ limit: '3mb' }));
 app.use(express.urlencoded({ extended: true }));
 
 // Serve frontend static files

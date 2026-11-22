@@ -103,10 +103,11 @@ exports.createWanted = async (req, res, next) => {
       desc: desc || 'Looking to acquire this item on campus from a fellow Cal student.',
       budget: budget.startsWith('$') ? budget : `$${budget}`,
       border: isUrgent ? '#ef4444' : '#0f1fa8',
-      initials: 'AM',
+      userId: req.user.id,
+      initials: req.user.name.split(' ').filter(Boolean).map((n) => n[0]).join('').slice(0, 2).toUpperCase() || 'ST',
       avCls: 'avatar-ar',
-      name: 'Alex M.',
-      course: 'EECS • Sr',
+      name: req.user.name,
+      course: 'Student',
       timeAgo: 'Just now',
       tags: [
         { t: isUrgent ? 'Urgent Need' : 'Campus Need', cls: isUrgent ? 'chip-red' : 'chip-blue' },
@@ -150,10 +151,11 @@ exports.createWanted = async (req, res, next) => {
 exports.submitOffer = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { offeredBy, amount, message } = req.body;
+    const { amount, message } = req.body;
 
     const offer = {
-      offeredBy: offeredBy || 'Verified Peer',
+      offeredById: req.user.id,
+      offeredBy: req.user.name,
       amount: Number(amount) || 0,
       message: message || 'I have this item available for meetup on campus!',
       createdAt: new Date()

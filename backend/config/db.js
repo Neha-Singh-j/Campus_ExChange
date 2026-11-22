@@ -29,10 +29,13 @@ const seedDatabaseIfEmpty = async () => {
       );
     }
 
-    const bundleCount = await Bundle.countDocuments();
-    if (bundleCount === 0) {
-      console.log('Seeding initial move-out bundles...');
-      await Bundle.insertMany(initialBundles);
+    // Upsert (not insertMany) so older databases also get the string `id` field
+    for (const item of initialBundles) {
+      await Bundle.findOneAndUpdate(
+        { $or: [{ id: item.id }, { title: item.title }] },
+        { $set: item },
+        { upsert: true, new: true }
+      );
     }
 
     const wantedCount = await Wanted.countDocuments();

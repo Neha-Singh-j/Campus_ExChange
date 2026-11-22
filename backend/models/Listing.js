@@ -33,6 +33,7 @@ const listingSchema = new mongoose.Schema(
       initials: { type: String, default: 'AM' },
       avCls: { type: String, default: 'avatar-ml' }
     },
+    sellerId: { type: String, default: null, index: true },
     tags: [{ type: String }],
     isWishlisted: { type: Boolean, default: false },
     campusId: { type: String, default: 'berkeley' },
