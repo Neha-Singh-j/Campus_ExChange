@@ -222,15 +222,23 @@ exports.createListing = async (req, res, next) => {
       imgKey: imgKey || '',
       grad: req.body.grad || 'linear-gradient(135deg,#4a6080,#2d4060)',
       desc: desc || 'Newly posted item directly from a verified UC Berkeley student.',
+      // Seller identity always comes from the logged-in account, never from the request body
+      sellerId: req.user.id,
       seller: {
-        name: seller?.name || 'Alex Morgan',
-        role: seller?.role || 'Jr • Haas School of Business',
+        name: req.user.name,
+        role: seller?.role || 'Student',
         avatar: seller?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80',
-        rating: seller?.rating || 5.0,
-        verified: seller?.verified !== undefined ? seller.verified : true,
+        rating: 5.0,
+        verified: true,
         cls: seller?.cls || 'Jr',
         hub: seller?.hub || 'Main Campus',
-        initials: seller?.initials || 'AM',
+        initials: req.user.name
+          .split(' ')
+          .filter(Boolean)
+          .map((n) => n[0])
+          .join('')
+          .slice(0, 2)
+          .toUpperCase() || 'ST',
         avCls: seller?.avCls || 'avatar-ml'
       },
       tags: tags || [(category || 'Item').split(' ')[0], courseCode || 'Campus'],
@@ -375,17 +383,28 @@ exports.deleteListing = async (req, res, next) => {
   try {
     const { id } = req.params;
 
+    // Only the seller or an admin may delete a listing
+    const canDelete = (listing) =>
+      req.user.role === 'admin' || (listing.sellerId && String(listing.sellerId) === req.user.id);
+
     if (getIsConnected()) {
-      const deleted = await Listing.findOneAndDelete(findListingQuery(id));
-      if (!deleted) {
+      const existing = await Listing.findOne(findListingQuery(id));
+      if (!existing) {
         return res.status(404).json({ success: false, message: 'Listing not found' });
       }
+      if (!canDelete(existing)) {
+        return res.status(403).json({ success: false, message: 'You can only delete your own listings' });
+      }
+      await existing.deleteOne();
       return res.status(200).json({ success: true, message: 'Listing deleted' });
     }
 
     const index = memoryStore.listings.findIndex((l) => l._id === id || l.id === id);
     if (index === -1) {
       return res.status(404).json({ success: false, message: 'Listing not found' });
+    }
+    if (!canDelete(memoryStore.listings[index])) {
+      return res.status(403).json({ success: false, message: 'You can only delete your own listings' });
     }
     memoryStore.listings.splice(index, 1);
 

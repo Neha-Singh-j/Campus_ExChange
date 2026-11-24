@@ -24,6 +24,8 @@ const memoryStore = {
   wishlist: withIds(initialWishlist, 'wish'),
   watchlists: withIds(initialWatchlists, 'wtch'),
   hubs: withIds(initialHubs, 'hub'),
+  users: [],
+  orders: [],
   verification: {
     _id: 'verif_001',
     campus: 'UC Berkeley – Main Campus',

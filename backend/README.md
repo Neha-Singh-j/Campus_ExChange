@@ -1,6 +1,6 @@
-# CampusZon — Backend (MVC Architecture)
+# CampusXchange — Backend (MVC Architecture)
 
-RESTful API backend for **CampusZon** (UC Berkeley Verified Student Marketplace), built with **Node.js, Express, and Mongoose** following standard **Model-View-Controller (MVC)** architecture.
+RESTful API backend for **CampusXchange** (UC Berkeley Verified Student Marketplace), built with **Node.js, Express, and Mongoose** following standard **Model-View-Controller (MVC)** architecture.
 
 ---
 
@@ -115,9 +115,19 @@ npm test
 - `DELETE /api/wishlist/watchlists/:id` — Delete a course watchlist
 
 ### 6. Student Verification (`/api/verify`)
-- `GET /api/verify/profile` — Get active student verification profile
-- `POST /api/verify/request` — Submit student verification (`campus`, `academicEmail`, `studentType`, `idScanFileName`, `consent`)
+- `GET /api/verify/profile` — The logged-in student's own details and verification status (403 for admins)
+- `POST /api/verify/request` — Update student details (`universityName`, `rollNo`, `universityEmail`, `department`, `personalEmail`, `phone`, `yearOfStudy`, optional new `idProofImage`). Resets status to PENDING (403 for admins)
 
 ### 7. Campus Meetup Hubs (`/api/hubs`)
 - `GET /api/hubs` — Get designated safe meetup hubs (Moffitt, MLK Union, UCPD Station)
 - `GET /api/hubs/safety-pledge` — ScamShield™ protocol & data protection policies
+
+## Authentication & Admin
+
+- `POST /api/auth/signup` / `POST /api/auth/login` return `{ token, user }`. Send the token as `Authorization: Bearer <token>`.
+- Signups are always `student` accounts and require `universityName`, `rollNo` and an ID photo (`idProofImage`, PNG/JPG/WebP data URL); the login email is the university email. Admins are not students: they have no student profile and cannot use `/api/verify`.
+- Admins review students at `PATCH /api/admin/users/:id/verification` (`status`: VERIFIED/REJECTED/PENDING) and `GET /api/admin/users/:id/id-proof`. The single admin account is created on server start from `ADMIN_EMAIL` / `ADMIN_PASSWORD` in `.env` (weak or placeholder passwords are refused).
+- Posting, deleting (own listings only; admins can delete any), wishlist, offers, bundles, verification and orders require login.
+- `POST /api/orders` records a purchase (price is always taken from the stored item); `PATCH /api/orders/:id/complete` marks it completed.
+- `/api/admin/*` (admin only): `overview`, `orders`, `listings`, `users`, `PATCH users/:id/active`.
+- Tests: `npm run test:auth` (no MongoDB needed) and `npm test`.
