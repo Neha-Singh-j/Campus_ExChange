@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useRef, useState } from 'react';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import MarketplacePage from './pages/MarketplacePage';
@@ -16,87 +16,116 @@ import ChatDrawer from './components/ChatDrawer';
 import EscrowModal from './components/EscrowModal';
 
 import { INITIAL_LISTINGS, WANTED_REQUESTS } from './data/mockData';
+import { localizeData } from './data/campuses';
+import { CampusProvider } from './context/CampusContext';
+import { useCampus } from './context/useCampus';
 
-export default function App() {
+// Module-level cache (not a ref), so it is safe to call during render.
+const seedCache = new Map();
+function getSeed(c) {
+  if (!seedCache.has(c.id)) {
+    seedCache.set(c.id, {
+      listings: localizeData(INITIAL_LISTINGS, c),
+      wanted: localizeData(WANTED_REQUESTS, c),
+    });
+  }
+  return seedCache.get(c.id);
+}
+
+function AppShell() {
+  const { campus, selectCampus } = useCampus();
+
   const [activeTab, setActiveTab] = useState('marketplace');
-  const [selectedCampus, setSelectedCampus] = useState('UC Berkeley • Main Campus');
-  
-  // Listings and Wanted requests state
-  const [listings, setListings] = useState(INITIAL_LISTINGS);
-  const [wantedRequests, setWantedRequests] = useState(WANTED_REQUESTS);
 
-  // Modals state
+  // ---- Per-campus data -----------------------------------------------------
+  // Each campus gets its own listings + wanted board. The first time a campus is
+  // opened, the Berkeley mock data is localized to it (landmarks, domain, names).
+  // Edits (wishlist hearts, new posts) are kept separately per campus.
+  const [store, setStore] = useState({}); // { [campusId]: { listings, wanted } }
+
+  const current = store[campus.id] ?? getSeed(campus);
+  const listings = current.listings;
+  const wantedRequests = current.wanted;
+
+  const patchCampus = (key, next) =>
+    setStore((prev) => {
+      const base = prev[campus.id] ?? getSeed(campus);
+      return { ...prev, [campus.id]: { ...base, [key]: typeof next === 'function' ? next(base[key]) : next } };
+    });
+
+  // ---- Modals / drawers ----------------------------------------------------
   const [isPostModalOpen, setIsPostModalOpen] = useState(false);
   const [isWantedModalOpen, setIsWantedModalOpen] = useState(false);
   const [isOfferModalOpen, setIsOfferModalOpen] = useState(false);
   const [selectedWantedRequest, setSelectedWantedRequest] = useState(null);
 
-  // Chat & Escrow State
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [chatTargetItem, setChatTargetItem] = useState(null);
   const [isEscrowOpen, setIsEscrowOpen] = useState(false);
   const [escrowTargetItem, setEscrowTargetItem] = useState(null);
 
-  // Notification Toast state
+  // ---- Toast ---------------------------------------------------------------
   const [notificationMessage, setNotificationMessage] = useState(null);
-
+  const toastTimer = useRef(null);
   const showNotification = (msg) => {
     setNotificationMessage(msg);
-    setTimeout(() => setNotificationMessage(null), 3500);
+    clearTimeout(toastTimer.current);
+    toastTimer.current = setTimeout(() => setNotificationMessage(null), 3500);
   };
 
-  // Toggle Wishlist
+  // ---- Handlers ------------------------------------------------------------
   const handleToggleWishlist = (id) => {
-    setListings(prev => prev.map(item => {
-      if (item.id === id) {
-        const nextState = !item.isWishlisted;
-        showNotification(nextState ? `Added "${item.title}" to your Wishlist!` : `Removed from Wishlist.`);
-        return { ...item, isWishlisted: nextState };
-      }
-      return item;
-    }));
+    const item = listings.find((l) => l.id === id);
+    if (!item) return;
+    const nextState = !item.isWishlisted;
+    patchCampus('listings', (prev) => prev.map((l) => (l.id === id ? { ...l, isWishlisted: nextState } : l)));
+    showNotification(nextState ? `Added "${item.title}" to your Wishlist!` : 'Removed from Wishlist.');
   };
 
-  // Add new listing
   const handleAddItem = (newItem) => {
-    setListings([newItem, ...listings]);
-    showNotification(`Item "${newItem.title}" posted successfully!`);
+    patchCampus('listings', (prev) => [{ ...newItem, campusId: campus.id }, ...prev]);
+    showNotification(`Item "${newItem.title}" posted at ${campus.short}!`);
   };
 
-  // Add new wanted request
   const handleAddWanted = (newWanted) => {
-    setWantedRequests([newWanted, ...wantedRequests]);
-    showNotification(`Wanted request posted to 15,000+ campus peers!`);
+    patchCampus('wanted', (prev) => [{ ...newWanted, campusId: campus.id }, ...prev]);
+    showNotification(`Wanted request posted to ${campus.short} peers!`);
   };
 
-  // Open Chat with Seller
   const handleOpenChat = (item) => {
     setChatTargetItem(item);
     setIsChatOpen(true);
   };
 
-  // Trigger Escrow Hold
   const handleTriggerEscrow = (item) => {
     setEscrowTargetItem(item);
     setIsEscrowOpen(true);
   };
 
-  // Open Offer Modal for a wanted request
   const handleOpenOfferModal = (req) => {
     setSelectedWantedRequest(req);
     setIsOfferModalOpen(true);
   };
 
-  // Send an offer
-  const handleSendOffer = (requestId, offerDetails) => {
-    showNotification(`Offer sent to student! Escrow handshake ready.`);
+  const handleSendOffer = () => {
+    showNotification('Offer sent to student! Escrow handshake ready.');
   };
 
-  const wishlistCount = listings.filter(item => item.isWishlisted).length;
+  // Switching campus: close anything tied to the old campus and confirm the switch.
+  const handleSelectCampus = (idOrLabel) => {
+    selectCampus(idOrLabel);
+    setIsChatOpen(false);
+    setIsEscrowOpen(false);
+    setIsOfferModalOpen(false);
+    setChatTargetItem(null);
+    setEscrowTargetItem(null);
+    setSelectedWantedRequest(null);
+  };
+
+  const wishlistCount = listings.filter((item) => item.isWishlisted).length;
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-800 flex flex-col font-sans selection:bg-blue-900 selection:text-white">
-      
+    <div className="min-h-screen flex flex-col">
       {/* Toast Alert */}
       {notificationMessage && (
         <div className="fixed top-20 right-6 z-50 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-2xl border border-slate-700 flex items-center gap-3 animate-in fade-in slide-in-from-top-4">
@@ -105,35 +134,30 @@ export default function App() {
         </div>
       )}
 
-      {/* Main Top Navigation Bar */}
+      {/* Main Top Navigation Bar — render <CampusSelector /> inside it (see notes) */}
       <Navbar
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         onOpenPostModal={() => setIsPostModalOpen(true)}
         wishlistCount={wishlistCount}
-        selectedCampus={selectedCampus}
-        setSelectedCampus={setSelectedCampus}
-        onOpenNotification={() => showNotification("You have 3 active escrow alerts and 1 price drop notification.")}
+        selectedCampus={campus.label}
+        setSelectedCampus={handleSelectCampus}
+        onOpenNotification={() => showNotification('You have 3 active escrow alerts and 1 price drop notification.')}
       />
 
-      {/* Dynamic Page Views */}
-      <main className="flex-1">
+      {/* Dynamic Page Views — keyed by campus so page-local filters/search reset on switch */}
+      <main className="flex-1" key={campus.id}>
         {activeTab === 'marketplace' && (
           <MarketplacePage
             listings={listings}
             onToggleWishlist={handleToggleWishlist}
             onOpenChat={handleOpenChat}
-            onTriggerEscrow={handleTriggerEscrow}
             onNavigateToHubs={() => setActiveTab('verification')}
-            selectedCampus={selectedCampus}
           />
         )}
 
         {activeTab === 'verification' && (
-          <VerificationPage
-            selectedCampus={selectedCampus}
-            setSelectedCampus={setSelectedCampus}
-          />
+          <VerificationPage selectedCampus={campus.label} setSelectedCampus={handleSelectCampus} />
         )}
 
         {activeTab === 'wanted' && (
@@ -141,14 +165,12 @@ export default function App() {
             wantedRequests={wantedRequests}
             onOpenWantedModal={() => setIsWantedModalOpen(true)}
             onOpenOfferModal={handleOpenOfferModal}
+            onNavigate={setActiveTab}
           />
         )}
 
         {activeTab === 'advanced-search' && (
-          <AdvancedSearchPage
-            onOpenChat={handleOpenChat}
-            onTriggerEscrow={handleTriggerEscrow}
-          />
+          <AdvancedSearchPage onOpenChat={handleOpenChat} onTriggerEscrow={handleTriggerEscrow} />
         )}
 
         {activeTab === 'wishlist' && (
@@ -157,30 +179,26 @@ export default function App() {
             onToggleWishlist={handleToggleWishlist}
             onOpenChat={handleOpenChat}
             onTriggerEscrow={handleTriggerEscrow}
+            onNavigate={setActiveTab}
           />
         )}
 
         {activeTab === 'bundles' && (
-          <MoveOutBundlesPage
-            onTriggerEscrow={handleTriggerEscrow}
-            onOpenPostModal={() => setIsPostModalOpen(true)}
-          />
+          <MoveOutBundlesPage onTriggerEscrow={handleTriggerEscrow} onOpenPostModal={() => setIsPostModalOpen(true)} />
         )}
 
-        {activeTab === 'synopsis' && (
-          <SynopsisPage />
-        )}
+        {activeTab === 'synopsis' && <SynopsisPage />}
       </main>
 
       {/* Global Footer */}
-      <Footer onNavigate={(tab) => setActiveTab(tab)} />
+      <Footer onNavigate={(tab) => setActiveTab(tab)} activeTab={activeTab} />
 
       {/* Global Modals & Drawers */}
       <PostItemModal
         isOpen={isPostModalOpen}
         onClose={() => setIsPostModalOpen(false)}
         onAddItem={handleAddItem}
-        selectedCampus={selectedCampus}
+        selectedCampus={campus.label}
       />
 
       <PostWantedModal
@@ -206,12 +224,15 @@ export default function App() {
         }}
       />
 
-      <EscrowModal
-        isOpen={isEscrowOpen}
-        onClose={() => setIsEscrowOpen(false)}
-        targetItem={escrowTargetItem}
-      />
-
+      <EscrowModal isOpen={isEscrowOpen} onClose={() => setIsEscrowOpen(false)} targetItem={escrowTargetItem} />
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <CampusProvider>
+      <AppShell />
+    </CampusProvider>
   );
 }

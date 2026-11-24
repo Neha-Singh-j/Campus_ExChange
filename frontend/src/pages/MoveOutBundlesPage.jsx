@@ -1,370 +1,288 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  GraduationCap, 
-  Sparkles, 
-  Clock, 
-  TrendingDown, 
-  CheckCircle2, 
-  ShieldCheck, 
-  Truck, 
-  Package, 
-  Lock, 
-  MapPin, 
-  ArrowRight,
-  Boxes,
-  Layers,
-  Heart
-} from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
 import { MOVE_OUT_BUNDLES } from '../data/mockData';
+import { useCampus } from '../context/useCampus';
+import { useLocalize } from '../context/useLocalize';
 
-export default function MoveOutBundlesPage({ onTriggerEscrow, onOpenPostModal }) {
-  const [selectedCategory, setSelectedCategory] = useState('All');
-  const [timeLeft, setTimeLeft] = useState({
-    days: 12,
-    hours: 8,
-    minutes: 44,
-    seconds: 11,
-  });
+const TABS = [
+  { label: 'All Move-Out Bundles', count: 142 },
+  { label: 'Full Dorm Room Kits', count: 38 },
+  { label: 'EECS / STEM Lab Workstations', count: 29 },
+  { label: 'Kitchen & Meal Prep Essentials', count: 24 },
+  { label: 'Apartment Furniture Lots', count: 21 },
+];
 
-  // Countdown timer simulation
+const AVATARS = ['avatar-ml', 'avatar-dk', 'avatar-st', 'avatar-ar', 'avatar-jm', 'avatar-cb', 'avatar-mw', 'avatar-ep'];
+const GRADS = [
+  'linear-gradient(135deg,#8aabcc,#4a7a9b)',
+  'linear-gradient(135deg,#2c3e6b,#1a2545)',
+  'linear-gradient(135deg,#c8a97e,#8b6340)',
+  'linear-gradient(135deg,#9db8d4,#6a8fa8)',
+  'linear-gradient(135deg,#d4c5a9,#a89070)',
+  'linear-gradient(135deg,#4a6080,#2d4060)',
+];
+
+const pad = (n) => String(n).padStart(2, '0');
+
+function useCountdown(totalSeconds) {
+  const [left, setLeft] = useState(totalSeconds);
   useEffect(() => {
-    const timer = setInterval(() => {
-      setTimeLeft(prev => {
-        if (prev.seconds > 0) return { ...prev, seconds: prev.seconds - 1 };
-        if (prev.minutes > 0) return { ...prev, minutes: 59, seconds: 59 };
-        return prev;
-      });
-    }, 1000);
+    const timer = setInterval(() => setLeft((s) => Math.max(0, s - 1)), 1000);
     return () => clearInterval(timer);
   }, []);
+  return {
+    days: pad(Math.floor(left / 86400)),
+    hours: pad(Math.floor((left % 86400) / 3600)),
+    mins: pad(Math.floor((left % 3600) / 60)),
+    secs: pad(left % 60),
+  };
+}
 
-  const categories = [
-    { label: 'All Move-Out Bundles', count: 142 },
-    { label: 'Full Dorm Room Kits', count: 38 },
-    { label: 'EECS / STEM Lab Workstations', count: 29 },
-    { label: 'Kitchen & Meal Prep Essentials', count: 24 },
-    { label: 'Apartment Furniture Lots', count: 21 },
-  ];
+const Check = () => (
+  <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M3 8l3.5 3.5L13 4" />
+  </svg>
+);
+
+const Icon = ({ children }) => (
+  <svg viewBox="0 0 22 22" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+    {children}
+  </svg>
+);
+
+export default function MoveOutBundlesPage({ onTriggerEscrow, onOpenPostModal }) {
+  const { campus } = useCampus();
+  const loc = useLocalize();
+  const [activeTab, setActiveTab] = useState(0);
+  const [liked, setLiked] = useState({});
+  const t = useCountdown(12 * 86400 + 8 * 3600 + 44 * 60 + 11);
+
+  const bundles = useMemo(() => loc(MOVE_OUT_BUNDLES), [loc]);
+  const lm = campus.landmarks;
+
+  const claim = (b) =>
+    onTriggerEscrow({
+      title: b.title,
+      price: b.price,
+      meetupLocation: b.location,
+      image: b.image,
+      condition: 'Move-Out Bundle Lot',
+      seller: { name: b.seller },
+    });
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-300">
-      
-      {/* Top Notice Banner */}
-      <div className="bg-amber-500 text-slate-950 font-bold text-xs py-2 px-4 text-center flex flex-wrap items-center justify-center gap-3">
-        <span className="flex items-center gap-1.5">
-          <Truck className="w-4 h-4" />
-          <span>Campus Safe Move Alert: Free moving dolly loans active at MLK Student Union & Unit 1 Commons</span>
-        </span>
-        <span className="hidden md:inline">|</span>
-        <span>May 10 - 22 Final Clearance Phase</span>
-        <span className="hidden md:inline">|</span>
-        <button onClick={onOpenPostModal} className="underline hover:text-white cursor-pointer">
-          Seniors: Post Your Whole Room →
-        </button>
-      </div>
-
-      {/* Hero Liquidation Banner */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 text-white rounded-3xl p-6 sm:p-10 shadow-2xl border border-blue-900/40 relative overflow-hidden">
-          
-          {/* Subtle background graphics */}
-          <div className="absolute top-0 right-0 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl pointer-events-none"></div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center relative z-10">
-            
-            {/* Left Content */}
-            <div className="lg:col-span-7 space-y-4">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/30 text-xs font-bold">
-                <GraduationCap className="w-4 h-4" />
-                <span>UC BERKELEY CLASS OF 2026 CLEARANCE</span>
-              </div>
-
-              <h1 className="text-3xl sm:text-5xl font-black text-white tracking-tight leading-tight">
-                Senior Move-Out & <br />
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-amber-200 to-yellow-400">
-                  Graduation Bundle Liquidation.
-                </span>
+    <>
+      <div className="bundles-hero">
+        <div className="content-col">
+          <div className="bundles-hero-inner">
+            <div>
+              <span className="pill pill-amber rise" style={{ marginBottom: 'calc(16*var(--u))', display: 'inline-flex' }}>
+                {campus.name.toUpperCase()} CLASS OF 2026 CLEARANCE
+              </span>
+              <h1 className="rise">
+                Senior Move-Out &amp; Graduation
+                <br />
+                Bundle Liquidation.
               </h1>
-
-              <p className="text-slate-300 text-xs sm:text-sm max-w-xl leading-relaxed">
-                Dorms and apartments clear out May 10-22. Score complete living setups, coding battle-stations, and major lab packs at <strong>60-80% off retail</strong> before graduating seniors head off campus.
+              <p className="hero-p rise">
+                Dorms and apartments clear out May 10–22. Score complete living setups, coding battle-stations, and major lab packs at <strong>60–80% off retail</strong> before graduating seniors head off campus.
               </p>
-
-              {/* Countdown Timer Block (Matching PDF Page 7) */}
-              <div className="pt-2">
-                <div className="text-[10px] font-mono uppercase tracking-widest text-slate-400 font-bold mb-2">
-                  TIME UNTIL FINAL DORM LOCKOUT
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="bg-white/10 backdrop-blur-md px-3.5 py-2 rounded-xl text-center border border-white/15 min-w-[55px]">
-                    <div className="text-xl sm:text-2xl font-black text-white font-mono">{timeLeft.days}</div>
-                    <div className="text-[9px] uppercase tracking-wider text-slate-400 font-bold">Days</div>
-                  </div>
-                  <span className="text-slate-500 font-bold text-xl">:</span>
-                  <div className="bg-white/10 backdrop-blur-md px-3.5 py-2 rounded-xl text-center border border-white/15 min-w-[55px]">
-                    <div className="text-xl sm:text-2xl font-black text-white font-mono">{timeLeft.hours}</div>
-                    <div className="text-[9px] uppercase tracking-wider text-slate-400 font-bold">Hours</div>
-                  </div>
-                  <span className="text-slate-500 font-bold text-xl">:</span>
-                  <div className="bg-white/10 backdrop-blur-md px-3.5 py-2 rounded-xl text-center border border-white/15 min-w-[55px]">
-                    <div className="text-xl sm:text-2xl font-black text-white font-mono">{timeLeft.minutes}</div>
-                    <div className="text-[9px] uppercase tracking-wider text-slate-400 font-bold">Mins</div>
-                  </div>
-                  <span className="text-slate-500 font-bold text-xl">:</span>
-                  <div className="bg-white/10 backdrop-blur-md px-3.5 py-2 rounded-xl text-center border border-white/15 min-w-[55px]">
-                    <div className="text-xl sm:text-2xl font-black text-amber-400 font-mono">{timeLeft.seconds}</div>
-                    <div className="text-[9px] uppercase tracking-wider text-amber-300 font-bold">Secs</div>
-                  </div>
+              <div className="countdown-row rise">
+                <span className="countdown-label">TIME UNTIL FINAL DORM LOCKOUT</span>
+                <div className="countdown-tiles">
+                  <div className="countdown-tile">{t.days}</div>
+                  <span className="countdown-sep">:</span>
+                  <div className="countdown-tile">{t.hours}</div>
+                  <span className="countdown-sep">:</span>
+                  <div className="countdown-tile">{t.mins}</div>
+                  <span className="countdown-sep">:</span>
+                  <div className="countdown-tile">{t.secs}</div>
                 </div>
               </div>
-
-              {/* Mini Stats Counters */}
-              <div className="grid grid-cols-3 gap-3 pt-3 max-w-md">
-                <div className="bg-white/5 border border-white/10 p-3 rounded-xl">
-                  <div className="text-xl font-black text-white">$340</div>
-                  <div className="text-[10px] text-slate-400 uppercase font-bold">Avg Bundle Savings</div>
+              <div className="bundle-stats rise">
+                <div className="bundle-stat"><strong>$340</strong> Avg Bundle Savings</div>
+                <div className="bundle-stat"><strong>142</strong> Complete Setups</div>
+                <div className="bundle-stat"><strong>100%</strong> Senior Verified</div>
+              </div>
+            </div>
+            <div>
+              <div className="dark-card">
+                <div className="dark-card-title">Senior Verified Guarantee</div>
+                <div className="dark-card-sub">Buy Whole Rooms, Not Pieces</div>
+                <div style={{ display: 'flex', gap: 'calc(8*var(--u))', marginTop: 'calc(10*var(--u))', flexWrap: 'wrap' }}>
+                  <span className="pill" style={{ background: 'rgba(110,231,183,0.2)', color: '#6ee7b7', fontSize: 'calc(9.5*var(--u))' }}>✓ Escrow Protected</span>
+                  <span className="pill" style={{ background: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.7)', fontSize: 'calc(9.5*var(--u))' }}>Zero Dumpster Initiative</span>
                 </div>
-                <div className="bg-white/5 border border-white/10 p-3 rounded-xl">
-                  <div className="text-xl font-black text-amber-400">142</div>
-                  <div className="text-[10px] text-slate-400 uppercase font-bold">Complete Setups</div>
-                </div>
-                <div className="bg-white/5 border border-white/10 p-3 rounded-xl">
-                  <div className="text-xl font-black text-emerald-400">100%</div>
-                  <div className="text-[10px] text-slate-400 uppercase font-bold">Senior Verified</div>
+                <div
+                  className="photo-card"
+                  style={{
+                    backgroundImage: `linear-gradient(to top, rgba(11,21,96,.8), rgba(11,21,96,.1)), url(${bundles[0]?.image ?? ''}), linear-gradient(135deg,#4a6080,#2d4060)`,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                  }}
+                >
+                  <span className="photo-card-label">LIVE HANDOFF HUB</span>
+                  <span className="photo-card-title">{lm[3]} Loading Zone</span>
                 </div>
               </div>
             </div>
-
-            {/* Right Featured Showcase Card */}
-            <div className="lg:col-span-5">
-              <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-5 space-y-4">
-                <div className="flex justify-between items-center text-xs">
-                  <span className="px-2.5 py-0.5 rounded-full bg-amber-400 text-blue-950 font-bold uppercase tracking-wider text-[10px]">
-                    Senior Verified Guarantee
-                  </span>
-                  <span className="text-slate-300 text-[11px]">Zero Dumpster Initiative</span>
-                </div>
-
-                <div className="space-y-1">
-                  <h3 className="text-lg font-black text-white">Buy Whole Rooms, Not Pieces</h3>
-                  <p className="text-slate-300 text-xs leading-relaxed">
-                    Every bundle includes all accessories, power cords, mounts, and notes. One checkout, one campus hand-off.
-                  </p>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2">
-                  <img
-                    src="https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=300&q=80"
-                    alt="Room Kit"
-                    className="w-full h-24 object-cover rounded-xl border border-white/20"
-                  />
-                  <img
-                    src="https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?auto=format&fit=crop&w=300&q=80"
-                    alt="Desk Rig"
-                    className="w-full h-24 object-cover rounded-xl border border-white/20"
-                  />
-                </div>
-
-                <div className="pt-2 border-t border-white/15 flex items-center justify-between text-xs">
-                  <div className="flex items-center gap-1.5 text-emerald-400 font-semibold text-[11px]">
-                    <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
-                    <span>Unit 2 Towle Loading Zone</span>
-                  </div>
-                  <span className="text-slate-300 text-[11px]">Escrow Hold Enabled</span>
-                </div>
-              </div>
-            </div>
-
           </div>
         </div>
-      </section>
+      </div>
 
-      {/* Category Pills */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none text-xs">
-          {categories.map((cat, idx) => {
-            const isSelected = idx === 0;
+      <div className="content-col">
+        <div className="tab-bar">
+          {TABS.map((tab, i) => (
+            <button key={tab.label} type="button" className={`tab-btn${activeTab === i ? ' active' : ''}`} onClick={() => setActiveTab(i)}>
+              {tab.label} ({tab.count})
+            </button>
+          ))}
+        </div>
+        <div className="filter-bar" style={{ marginTop: 'calc(14*var(--u))' }}>
+          <select className="filter-select" aria-label="Campus zone">
+            <option>All Campus Zones</option>
+            <option>North Campus</option>
+            <option>Southside</option>
+          </select>
+          <select className="filter-select" aria-label="Price tier">
+            <option>Sweet Spot: $50 – $150</option>
+            <option>Under $100</option>
+            <option>$150+</option>
+          </select>
+          <label className="filter-check">
+            <input type="checkbox" style={{ accentColor: 'var(--blue)' }} /> Graduating Class of &apos;26 Only
+          </label>
+          <label className="filter-check">
+            <input type="checkbox" style={{ accentColor: 'var(--blue)' }} /> Includes Dolly Loan
+          </label>
+          <span className="filter-label">Showing {bundles.length} Featured of 142</span>
+        </div>
+
+        <div className="bundle-grid">
+          {bundles.map((b, i) => {
+            const saveAmt = b.originalRetail - b.price;
+            const sellerName = b.seller.split('•')[0].trim();
+            const initials = sellerName.split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase();
+            const major = b.seller.split('•')[1]?.trim();
             return (
-              <button
-                key={cat.label}
-                className={`whitespace-nowrap px-4 py-2 rounded-xl font-bold transition-all cursor-pointer ${
-                  isSelected
-                    ? 'bg-blue-900 text-white shadow-md'
-                    : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'
-                }`}
-              >
-                <span>{cat.label}</span>
-                <span className={`ml-2 text-[10px] px-1.5 py-0.2 rounded-full ${
-                  isSelected ? 'bg-blue-800 text-blue-200' : 'bg-slate-100 text-slate-500'
-                }`}>
-                  {cat.count}
-                </span>
-              </button>
+              <div key={b.id} className="bundle-card rise" style={{ animationDelay: `${i * 60}ms` }}>
+                <div className="card-photo" style={{ background: GRADS[i % GRADS.length] }}>
+                  <img src={b.image} alt="" loading="lazy" style={{ position: 'absolute', inset: 0 }} onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+                  <span className="badge-top badge-course">{b.badge}</span>
+                  <span className="off-tag" style={{ top: 'auto', bottom: 'calc(10*var(--u))' }}>{b.savings}</span>
+                  <button
+                    type="button"
+                    className={`heart-btn${liked[b.id] ? ' liked' : ''}`}
+                    aria-label="Save bundle"
+                    onClick={() => setLiked((p) => ({ ...p, [b.id]: !p[b.id] }))}
+                  >
+                    <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M7 12S1 8 1 4.5a3 3 0 0 1 6 0 3 3 0 0 1 6 0C13 8 7 12 7 12z" />
+                    </svg>
+                  </button>
+                </div>
+                <div className="bundle-body">
+                  <div className="bundle-seller-row">
+                    <div className={`avatar ${AVATARS[i % AVATARS.length]}`}><span>{initials}</span><span className="dot" /></div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div className="seller-name">{sellerName}{major ? ` • ${major}` : ''}</div>
+                      <div className="seller-sub">{b.location}</div>
+                    </div>
+                    <span className="pill pill-grey" style={{ fontSize: 'calc(9*var(--u))' }}>Senior</span>
+                  </div>
+                  <div className="card-title">{b.title}</div>
+                  <div className="bundle-items">
+                    <div className="bundle-items-label">BUNDLE CONTENTS ({b.itemsCount} ITEMS):</div>
+                    <ul>
+                      {b.itemsList.map((item) => (
+                        <li key={item}>{item}</li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div className="bundle-note">&ldquo;{b.note}&rdquo;</div>
+                  <div className="bundle-price-row" style={{ marginTop: 'auto', paddingTop: 'calc(10*var(--u))' }}>
+                    <span className="struck" style={{ fontSize: 'calc(12*var(--u))' }}>${b.originalRetail} retail</span>
+                    <span className="price-sm">${b.price}</span>
+                    <span className="save-amber">Save ${saveAmt}</span>
+                  </div>
+                  <button type="button" className="btn btn-dark" onClick={() => claim(b)}>
+                    Claim Move-Out Bundle
+                  </button>
+                </div>
+              </div>
             );
           })}
         </div>
-      </section>
 
-      {/* Move-Out Bundles Cards Grid (Matching PDF Page 7) */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {MOVE_OUT_BUNDLES.map((bundle) => (
-            <div
-              key={bundle.id}
-              className="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-xs hover:shadow-xl hover:border-blue-300 transition-all duration-300 flex flex-col justify-between"
-            >
-              <div>
-                {/* Image & Retail savings badge */}
-                <div className="relative aspect-16/10 bg-slate-100 overflow-hidden">
-                  <img
-                    src={bundle.image}
-                    alt={bundle.title}
-                    className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
-                  />
-                  <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between text-[11px] font-bold text-white bg-slate-900/80 backdrop-blur-md px-3 py-1 rounded-lg">
-                    <span className="flex items-center gap-1">
-                      <MapPin className="w-3.5 h-3.5 text-amber-400" />
-                      <span className="truncate">{bundle.location}</span>
-                    </span>
-                    <span className="text-amber-300 shrink-0">{bundle.seller}</span>
-                  </div>
-                </div>
-
-                {/* Details */}
-                <div className="p-5 space-y-4 text-xs">
-                  <div>
-                    <h3 className="font-bold text-slate-900 text-base leading-snug">
-                      {bundle.title}
-                    </h3>
-
-                    {/* Breakdown list */}
-                    <div className="mt-3 bg-slate-50 p-3 rounded-xl border border-slate-100 space-y-1.5">
-                      <div className="text-[10px] uppercase font-bold text-slate-400 flex justify-between">
-                        <span>BUNDLE CONTENTS ({bundle.itemsCount} ITEMS)</span>
-                        <span className="text-emerald-700 font-semibold">Ready for Pickup</span>
-                      </div>
-                      <ul className="space-y-1 text-slate-700 text-[11px]">
-                        {bundle.itemsList.map((item, idx) => (
-                          <li key={idx} className="flex items-start gap-1.5">
-                            <span className="text-blue-700 font-bold shrink-0">•</span>
-                            <span className="line-clamp-1">{item}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-
-                    <p className="text-[11px] text-slate-500 mt-2 line-clamp-2 leading-relaxed">
-                      {bundle.note}
-                    </p>
-                  </div>
-                </div>
+        <div className="section-sm">
+          <div className="micro-label" style={{ textAlign: 'center', marginBottom: 'calc(8*var(--u))' }}>CAMPUS LOGISTICS PARTNERSHIP</div>
+          <h2 style={{ textAlign: 'center', marginBottom: 'calc(4*var(--u))' }}>How Move-Out Bundles Work On Campus</h2>
+          <p style={{ textAlign: 'center', fontSize: 'calc(12*var(--u))', color: 'var(--muted)', maxWidth: 'calc(520*var(--u))', margin: '0 auto' }}>
+            Coordinated with {campus.name} Residential Facilities to ensure safe physical handoffs, secure escrow payments, and zero dumpster overflow.
+          </p>
+          <div className="explainer-grid">
+            <div className="explainer-card">
+              <div className="explainer-icon">
+                <Icon>
+                  <rect x="1" y="4" width="14" height="12" rx="1" />
+                  <path d="M15 8h4l2 4v4h-6V8z" />
+                  <circle cx="5.5" cy="17.5" r="1.5" />
+                  <circle cx="17.5" cy="17.5" r="1.5" />
+                </Icon>
               </div>
-
-              {/* Price Row & Claim CTA */}
-              <div className="p-5 pt-0">
-                <div className="pt-3 border-t border-slate-100 flex items-center justify-between mb-3">
-                  <div>
-                    <span className="text-2xl font-black text-slate-900">${bundle.price}</span>
-                    <span className="text-xs text-slate-400 line-through ml-2">${bundle.originalRetail} retail</span>
-                  </div>
-                  <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">
-                    Save ${bundle.originalRetail - bundle.price}
-                  </span>
-                </div>
-
-                <button
-                  onClick={() => onTriggerEscrow({
-                    title: bundle.title,
-                    price: bundle.price,
-                    meetupLocation: bundle.location,
-                    image: bundle.image,
-                    condition: "Move-Out Bundle Lot",
-                    seller: { name: bundle.seller }
-                  })}
-                  className="w-full py-2.5 bg-blue-900 hover:bg-blue-800 text-white rounded-xl font-bold text-xs shadow-md transition-all flex items-center justify-center gap-1.5 cursor-pointer"
-                >
-                  <Lock className="w-3.5 h-3.5 text-amber-400" />
-                  <span>Claim Move-Out Bundle</span>
-                </button>
-              </div>
-
+              <h3 style={{ fontSize: 'calc(14*var(--u))', marginBottom: 'calc(6*var(--u))' }}>Designated Drop-Off Loading Docks</h3>
+              <p style={{ fontSize: 'calc(11.5*var(--u))', color: 'var(--muted)' }}>
+                Every residence hall ({lm[2]}, {lm[3]} &amp; {lm[4]}) has 3 reserved campus-escort 30-minute pickup spots with security oversight.
+              </p>
+              <div className="explainer-footnote">✓ Active 8AM – 8PM Daily</div>
             </div>
-          ))}
+            <div className="explainer-card">
+              <div className="explainer-icon">
+                <Icon>
+                  <circle cx="11" cy="11" r="9" />
+                  <path d="M11 7v4l3 3" />
+                </Icon>
+              </div>
+              <h3 style={{ fontSize: 'calc(14*var(--u))', marginBottom: 'calc(6*var(--u))' }}>Free Dolly &amp; Hand Truck Loans</h3>
+              <p style={{ fontSize: 'calc(11.5*var(--u))', color: 'var(--muted)' }}>
+                Flash your student ID at the {lm[1]} front desk for a complimentary 2-hour heavy dolly rental to move appliances.
+              </p>
+              <div className="explainer-footnote">✓ $0 Deposit for .edu accounts</div>
+            </div>
+            <div className="explainer-card">
+              <div className="explainer-icon">
+                <Icon>
+                  <rect x="3" y="9" width="14" height="10" rx="2" />
+                  <path d="M7 9V6a3 3 0 0 1 6 0v3" />
+                </Icon>
+              </div>
+              <h3 style={{ fontSize: 'calc(14*var(--u))', marginBottom: 'calc(6*var(--u))' }}>Campus Escrow Inspection Hold</h3>
+              <p style={{ fontSize: 'calc(11.5*var(--u))', color: 'var(--muted)' }}>
+                Buyer funds stay locked in CampusZon Escrow. You test the electronics and inspect the furniture at the loading dock before approving final funds.
+              </p>
+              <div className="explainer-footnote">✓ 100% Protection Guarantee</div>
+            </div>
+          </div>
         </div>
-      </section>
 
-      {/* How Move-Out Bundles Work On Campus (Matching PDF Page 7) */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="bg-slate-50 rounded-3xl p-8 border border-slate-200 space-y-6">
-          <div className="text-center space-y-1">
-            <span className="text-[10px] uppercase font-bold tracking-widest text-emerald-700">CAMPUS LOGISTICS PARTNERSHIP</span>
-            <h3 className="text-2xl font-black text-slate-900">How Move-Out Bundles Work On Campus</h3>
-            <p className="text-slate-500 text-xs max-w-lg mx-auto">
-              Coordinated with UC Berkeley Residential Facilities to ensure safe physical handoffs, secure escrow payments, and zero dumpster overflow.
+        <div className="cta-band">
+          <div style={{ flex: 1 }}>
+            <div className="micro-label" style={{ color: 'var(--amber)', marginBottom: 'calc(6*var(--u))' }}>ATTENTION GRADUATING CLASS OF 2026</div>
+            <h2>List Your Entire Dorm Room in Under 3 Minutes.</h2>
+            <p>
+              Don&apos;t leave hundreds of dollars in furniture behind or spend days meeting 10 different buyers. Snap one wide photo of your setup, price it as a package, and let a rising sophomore pick up everything at once.
             </p>
+            <div className="cta-checks">
+              <div className="cta-check"><Check /> No individual listing fees — one bundle, one post</div>
+              <div className="cta-check"><Check /> Campus Escrow protection for every transaction</div>
+              <div className="cta-check"><Check /> Free dolly loan and loading dock access included</div>
+            </div>
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-2 text-xs">
-            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-2">
-              <div className="p-2 bg-blue-50 text-blue-700 rounded-xl w-fit">
-                <MapPin className="w-5 h-5" />
-              </div>
-              <h4 className="font-bold text-slate-900 text-sm">Designated Drop-Off Loading Docks</h4>
-              <p className="text-slate-500 text-xs leading-relaxed">
-                Every residence hall (Unit 1, 2, 3, Foothill, & Clark Kerr) has 3 reserved campus-escort 30-minute pickup spots with security oversight.
-              </p>
-              <div className="text-[10px] text-blue-700 font-bold">✓ Active 8AM - 8PM Daily</div>
-            </div>
-
-            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-2">
-              <div className="p-2 bg-emerald-50 text-emerald-700 rounded-xl w-fit">
-                <Truck className="w-5 h-5" />
-              </div>
-              <h4 className="font-bold text-slate-900 text-sm">Free Dolly & Hand Truck Loans</h4>
-              <p className="text-slate-500 text-xs leading-relaxed">
-                Flash your student Cal 1 ID at MLK Student Union front desk for a complimentary 2-hour heavy dolly rental to move appliances.
-              </p>
-              <div className="text-[10px] text-emerald-700 font-bold">✓ $0 Deposit for .edu accounts</div>
-            </div>
-
-            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-2">
-              <div className="p-2 bg-amber-50 text-amber-700 rounded-xl w-fit">
-                <ShieldCheck className="w-5 h-5" />
-              </div>
-              <h4 className="font-bold text-slate-900 text-sm">Campus Escrow Inspection Hold</h4>
-              <p className="text-slate-500 text-xs leading-relaxed">
-                Buyer funds stay safely locked in CampusZon Escrow. You test the electronics and inspect the furniture at loading dock before approving final funds.
-              </p>
-              <div className="text-[10px] text-slate-700 font-bold">✓ 100% Protection Guarantee</div>
-            </div>
+          <div className="cta-right">
+            <button type="button" className="btn btn-amber-border" onClick={onOpenPostModal}>Create Move-Out Bundle</button>
+            <div style={{ fontSize: 'calc(10*var(--u))', color: 'rgba(255,255,255,0.5)', marginTop: 'calc(4*var(--u))' }}>Takes less than 3 minutes</div>
           </div>
         </div>
-      </section>
-
-      {/* Seller CTA Callout (Matching PDF Page 7 bottom) */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-4">
-        <div className="bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 text-white rounded-3xl p-6 sm:p-8 flex flex-col md:flex-row items-center justify-between gap-6 shadow-xl border border-blue-800">
-          <div className="space-y-2">
-            <span className="text-[10px] uppercase font-bold text-amber-400 tracking-wider">
-              Attention Graduating Class of 2026
-            </span>
-            <h3 className="text-2xl font-black text-white">
-              List Your Entire Dorm Room in Under 3 Minutes.
-            </h3>
-            <p className="text-slate-300 text-xs max-w-xl leading-relaxed">
-              Don't leave hundreds of dollars in furniture behind or spend days meeting 10 different buyers. Snap one wide photo of your setup, price it as a package, and let a rising sophomore pick up everything at once.
-            </p>
-          </div>
-
-          <button
-            onClick={onOpenPostModal}
-            className="shrink-0 px-6 py-3 bg-amber-400 hover:bg-amber-300 text-blue-950 font-black text-xs rounded-xl shadow-lg hover:shadow-xl transition-all cursor-pointer"
-          >
-            Create Move-Out Bundle
-          </button>
-        </div>
-      </section>
-
-    </div>
+      </div>
+    </>
   );
 }
