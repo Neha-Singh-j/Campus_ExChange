@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import MarketplacePage from './pages/MarketplacePage';
@@ -19,7 +19,6 @@ import { INITIAL_LISTINGS, WANTED_REQUESTS } from './data/mockData';
 import { localizeData } from './data/campuses';
 import { CampusProvider } from './context/CampusContext';
 import { useCampus } from './context/useCampus';
-import api from './services/api';
 
 // Module-level cache (not a ref), so it is safe to call during render.
 const seedCache = new Map();
@@ -41,74 +40,12 @@ function AppShell() {
   // ---- Per-campus data -----------------------------------------------------
   // Each campus gets its own listings + wanted board. The first time a campus is
   // opened, the Berkeley mock data is localized to it (landmarks, domain, names).
-  // Edits (wishlist hearts, new posts) are kept separately per campus and synced to backend.
+  // Edits (wishlist hearts, new posts) are kept separately per campus.
   const [store, setStore] = useState({}); // { [campusId]: { listings, wanted } }
 
   const current = store[campus.id] ?? getSeed(campus);
   const listings = current.listings;
   const wantedRequests = current.wanted;
-
-  // Load persisted listings and wanted items from the backend database on initial mount & campus switch
-  useEffect(() => {
-    let isMounted = true;
-    const fetchPersistedData = async () => {
-      try {
-        const [listingsRes, wantedRes] = await Promise.allSettled([
-          api.getListings({ campusId: campus.id }),
-          api.getWanted({ campusId: campus.id }),
-        ]);
-
-        if (!isMounted) return;
-
-        let backendListings = null;
-        if (listingsRes.status === 'fulfilled' && Array.isArray(listingsRes.value?.data) && listingsRes.value.data.length > 0) {
-          backendListings = listingsRes.value.data.map((item) => ({
-            ...item,
-            id: item.id || item._id,
-            meetupLocation: item.meetupLocation || item.loc || 'Moffitt Library North Steps',
-            category: item.category || item.cat || 'Textbooks & Courseware',
-            originalPrice: item.originalPrice || item.origPrice || Math.round((item.price || 40) * 1.6),
-            isWishlisted: Boolean(item.isWishlisted),
-            seller: {
-              name: item.seller?.name || 'Alex Morgan',
-              role: item.seller?.role || `${item.seller?.cls || 'Jr'} • ${item.seller?.hub || 'Main Campus'}`,
-              avatar: item.seller?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80',
-              rating: item.seller?.rating || 4.9,
-              verified: item.seller?.verified !== undefined ? item.seller.verified : true,
-            },
-          }));
-        }
-
-        let backendWanted = null;
-        if (wantedRes.status === 'fulfilled' && Array.isArray(wantedRes.value?.data) && wantedRes.value.data.length > 0) {
-          backendWanted = wantedRes.value.data.map((w) => ({
-            ...w,
-            id: w.id || w._id,
-          }));
-        }
-
-        if (backendListings || backendWanted) {
-          setStore((prev) => {
-            const base = prev[campus.id] ?? getSeed(campus);
-            return {
-              ...prev,
-              [campus.id]: {
-                listings: backendListings || base.listings,
-                wanted: backendWanted || base.wanted,
-              },
-            };
-          });
-        }
-      } catch (err) {
-        console.warn('Backend initial fetch fallback:', err);
-      }
-    };
-
-    fetchPersistedData();
-    return () => {
-      isMounted = false;
-    };
-  }, [campus.id]);
 
   const patchCampus = (key, next) =>
     setStore((prev) => {
@@ -137,46 +74,22 @@ function AppShell() {
   };
 
   // ---- Handlers ------------------------------------------------------------
-  const handleToggleWishlist = async (id) => {
-    const item = listings.find((l) => l.id === id || l._id === id);
+  const handleToggleWishlist = (id) => {
+    const item = listings.find((l) => l.id === id);
     if (!item) return;
     const nextState = !item.isWishlisted;
-    patchCampus('listings', (prev) =>
-      prev.map((l) => (l.id === id || l._id === id ? { ...l, isWishlisted: nextState } : l))
-    );
+    patchCampus('listings', (prev) => prev.map((l) => (l.id === id ? { ...l, isWishlisted: nextState } : l)));
     showNotification(nextState ? `Added "${item.title}" to your Wishlist!` : 'Removed from Wishlist.');
-    try {
-      await api.toggleWishlist(id, nextState);
-    } catch (err) {
-      console.warn('Backend wishlist sync:', err.message);
-    }
   };
 
-  const handleAddItem = async (newItem) => {
-    const itemWithCampus = { ...newItem, campusId: campus.id };
-    patchCampus('listings', (prev) => [itemWithCampus, ...prev]);
+  const handleAddItem = (newItem) => {
+    patchCampus('listings', (prev) => [{ ...newItem, campusId: campus.id }, ...prev]);
     showNotification(`Item "${newItem.title}" posted at ${campus.short}!`);
-    try {
-      const response = await api.createListing(itemWithCampus);
-      if (response?.data) {
-        const savedId = response.data.id || response.data._id;
-        patchCampus('listings', (prev) =>
-          prev.map((l) => (l.id === newItem.id ? { ...l, id: savedId, _id: response.data._id } : l))
-        );
-      }
-    } catch (err) {
-      console.warn('Backend listing sync:', err.message);
-    }
   };
 
-  const handleAddWanted = async (newWanted) => {
+  const handleAddWanted = (newWanted) => {
     patchCampus('wanted', (prev) => [{ ...newWanted, campusId: campus.id }, ...prev]);
     showNotification(`Wanted request posted to ${campus.short} peers!`);
-    try {
-      await api.createWanted(newWanted);
-    } catch (err) {
-      console.warn('Backend wanted sync:', err.message);
-    }
   };
 
   const handleOpenChat = (item) => {
@@ -194,15 +107,8 @@ function AppShell() {
     setIsOfferModalOpen(true);
   };
 
-  const handleSendOffer = async (offerData) => {
+  const handleSendOffer = () => {
     showNotification('Offer sent to student! Escrow handshake ready.');
-    if (selectedWantedRequest) {
-      try {
-        await api.submitOffer(selectedWantedRequest.id, offerData || {});
-      } catch (err) {
-        console.warn('Backend offer sync:', err.message);
-      }
-    }
   };
 
   // Switching campus: close anything tied to the old campus and confirm the switch.
@@ -259,6 +165,7 @@ function AppShell() {
             wantedRequests={wantedRequests}
             onOpenWantedModal={() => setIsWantedModalOpen(true)}
             onOpenOfferModal={handleOpenOfferModal}
+            onNavigate={setActiveTab}
           />
         )}
 
@@ -272,6 +179,7 @@ function AppShell() {
             onToggleWishlist={handleToggleWishlist}
             onOpenChat={handleOpenChat}
             onTriggerEscrow={handleTriggerEscrow}
+            onNavigate={setActiveTab}
           />
         )}
 

@@ -1,319 +1,246 @@
-import React, { useState } from 'react';
-import { 
-  Sparkles, 
-  PlusCircle, 
-  Search, 
-  Clock, 
-  MapPin, 
-  DollarSign, 
-  ShieldCheck, 
-  ArrowRight, 
-  CheckCircle2, 
-  Filter, 
-  MessageSquare,
-  Users,
-  Send
-} from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { useCampus } from '../context/useCampus';
+import { useLocalize } from '../context/useLocalize';
 
-export default function WantedBoardPage({ 
-  wantedRequests, 
-  onOpenWantedModal, 
-  onOpenOfferModal 
-}) {
+const CATEGORIES = [
+  { label: 'All Requests', count: '38' },
+  { label: 'Textbooks & Notes', count: '14' },
+  { label: 'Dorm & Living', count: '9' },
+  { label: 'Electronics & Gear', count: '7' },
+  { label: 'Moving & Boxes', count: '5' },
+  { label: 'Study Partners / Rides', count: '3' },
+];
+
+const BORDER = { red: '#ef4444', amber: '#f59e0b' };
+
+const STEPS = [
+  {
+    num: '1',
+    bg: '#eef1fc',
+    title: 'Post what you need',
+    desc: 'Specify the textbook, lab equipment, furniture, or gadget you require, your deadline, and how much you are ready to pay or borrow it for.',
+    note: '✓ Broadcasts to 15,000+ verified peers',
+  },
+  {
+    num: '2',
+    bg: '#f0fdf4',
+    title: 'Classmates reply with offers',
+    desc: 'Students who have the item in their closet or dorm room reply with photos, condition grades, and counter-offers via in-app chat.',
+    note: '✓ Zero spam • .edu credentials verified',
+  },
+  {
+    num: '3',
+    bg: '#e0f2fe',
+    title: 'Meet safely on campus to swap',
+    desc: null,
+    note: '✓ Campus security monitored hubs',
+  },
+];
+
+export default function WantedBoardPage({ wantedRequests, onOpenWantedModal, onOpenOfferModal, onNavigate }) {
+  const { campus } = useCampus();
+  const loc = useLocalize();
+  const lm = campus.landmarks;
+
   const [selectedCategory, setSelectedCategory] = useState('All Requests');
   const [urgencyFilter, setUrgencyFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
 
-  const categories = [
-    { label: 'All Requests', count: '38' },
-    { label: 'Textbooks & Notes', count: '14' },
-    { label: 'Dorm & Living', count: '9' },
-    { label: 'Electronics & Gear', count: '7' },
-    { label: 'Moving & Boxes', count: '5' },
-    { label: 'Study Partners / Rides', count: '3' },
-  ];
-
-  const filteredRequests = wantedRequests.filter((req) => {
-    const matchesCat = selectedCategory === 'All Requests' || req.category === selectedCategory;
-    const matchesSearch = req.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          req.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          req.tag.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCat && matchesSearch;
-  });
+  const filtered = useMemo(() => {
+    const q = searchQuery.toLowerCase();
+    return wantedRequests.filter((req) => {
+      const matchesCat = selectedCategory === 'All Requests' || req.category === selectedCategory;
+      const matchesSearch =
+        !q ||
+        req.title.toLowerCase().includes(q) ||
+        req.description.toLowerCase().includes(q) ||
+        req.tag.toLowerCase().includes(q);
+      const matchesUrgency =
+        urgencyFilter === 'all' ||
+        (urgencyFilter === 'urgent' && req.urgencyColor === 'red') ||
+        (urgencyFilter === 'week' && req.urgency.toLowerCase().includes('week'));
+      return matchesCat && matchesSearch && matchesUrgency;
+    });
+  }, [wantedRequests, selectedCategory, searchQuery, urgencyFilter]);
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 animate-in fade-in duration-300">
-      
-      {/* Top micro metric strip */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs border-b border-slate-200 pb-4 text-slate-500">
-        <div className="flex items-center gap-2">
-          <span className="font-bold text-slate-900">Commons / Community ISO Board</span>
-          <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold text-[10px]">
-            8 New Today
-          </span>
-        </div>
-        <div className="flex items-center gap-4 text-slate-600 font-medium">
-          <span className="flex items-center gap-1.5">
-            <Users className="w-3.5 h-3.5 text-blue-700" />
-            <span>15,420 Active Berkeley Students</span>
-          </span>
-          <span>•</span>
-          <span className="text-emerald-700 font-bold">
-            89% Match Rate in 48h
-          </span>
-        </div>
+    <div className="content-col" style={{ paddingTop: 'calc(32*var(--u))' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 'calc(10*var(--u))', flexWrap: 'wrap', marginBottom: 'calc(6*var(--u))' }}>
+        <span style={{ fontSize: 'calc(11*var(--u))', color: 'var(--muted)' }}>Commons / Community ISO Board</span>
+        <span className="pill pill-mint" style={{ fontSize: 'calc(9.5*var(--u))' }}>● 8 New Today</span>
+        <span style={{ marginLeft: 'auto', fontSize: 'calc(11*var(--u))', color: 'var(--muted)' }}>
+          15,420 Active {campus.short} Students · 89% Match Rate in 48h
+        </span>
       </div>
 
-      {/* Main Header & Post CTA */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div className="space-y-2">
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-800 border border-blue-200 text-[11px] font-bold uppercase tracking-wider">
-            <span>PEER-TO-PEER REQUEST FEED</span>
-          </div>
-          <h1 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
-            Wanted & ISO Board <span className="text-blue-700">(In Search Of)</span>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 'calc(10*var(--u))', flexWrap: 'wrap', gap: 12 }}>
+        <div>
+          <h1>
+            Wanted &amp; ISO Board <span style={{ color: 'var(--blue)' }}><em>(In Search Of)</em></span>
           </h1>
-          <p className="text-slate-600 text-xs sm:text-sm max-w-2xl leading-relaxed">
+          <p style={{ fontSize: 'calc(13*var(--u))', color: 'var(--muted)', marginTop: 'calc(8*var(--u))', maxWidth: 'calc(560*var(--u))' }}>
             Looking for a specific textbook, dorm item, lab kit, or ride-share? Post your request to 15,000+ campus peers before spending full retail price.
           </p>
         </div>
-
-        <button
-          onClick={onOpenWantedModal}
-          className="shrink-0 flex items-center gap-2 px-5 py-3 bg-blue-900 hover:bg-blue-800 text-white text-xs font-bold rounded-xl shadow-md hover:shadow-lg transition-all cursor-pointer"
-        >
-          <PlusCircle className="w-4 h-4 text-amber-400" />
-          <span>Post a Wanted Request</span>
-        </button>
+        <button type="button" className="btn btn-primary" onClick={onOpenWantedModal}>+ Post a Wanted Request</button>
       </div>
 
-      {/* Category Pills */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
-        {categories.map((cat) => {
-          const isSelected = selectedCategory === cat.label;
-          return (
-            <button
-              key={cat.label}
-              onClick={() => setSelectedCategory(cat.label)}
-              className={`whitespace-nowrap px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                isSelected
-                  ? 'bg-blue-900 text-white shadow-md'
-                  : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200'
-              }`}
-            >
-              <span>{cat.label}</span>
-              <span className={`ml-2 text-[10px] px-1.5 py-0.2 rounded-full ${
-                isSelected ? 'bg-blue-800 text-blue-200' : 'bg-slate-100 text-slate-500'
-              }`}>
-                {cat.count}
-              </span>
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Filters Bar */}
-      <div className="bg-white p-3 rounded-2xl border border-slate-200 shadow-xs grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
-        <div>
-          <label className="block text-[10px] uppercase font-bold text-slate-400 mb-1">URGENCY TIMELINE</label>
-          <select 
-            value={urgencyFilter}
-            onChange={(e) => setUrgencyFilter(e.target.value)}
-            className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 font-semibold text-slate-800 focus:outline-hidden"
+      <div className="tab-bar">
+        {CATEGORIES.map((cat) => (
+          <button
+            key={cat.label}
+            type="button"
+            className={`tab-btn${selectedCategory === cat.label ? ' active' : ''}`}
+            onClick={() => setSelectedCategory(cat.label)}
           >
-            <option value="all">Any Urgency Window</option>
-            <option value="urgent">Urgent (&lt; 24h)</option>
-            <option value="week">This Week</option>
-          </select>
-        </div>
-
-        <div>
-          <label className="block text-[10px] uppercase font-bold text-slate-400 mb-1">OFFERED BUDGET</label>
-          <select className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 font-semibold text-slate-800 focus:outline-hidden">
-            <option>All Payout Levels</option>
-            <option>Under $25</option>
-            <option>$25 - $75</option>
-            <option>$75+</option>
-          </select>
-        </div>
-
-        <div>
-          <label className="block text-[10px] uppercase font-bold text-slate-400 mb-1">CAMPUS ZONE / DORM</label>
-          <select className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 font-semibold text-slate-800 focus:outline-hidden">
-            <option>Entire UC Berkeley Hub</option>
-            <option>Unit 1 & Unit 2 Dorms</option>
-            <option>Foothill / Northside</option>
-            <option>Clark Kerr & Southside</option>
-          </select>
-        </div>
-
-        <div>
-          <label className="block text-[10px] uppercase font-bold text-slate-400 mb-1">KEYWORD SEARCH</label>
-          <div className="relative">
-            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" />
-            <input
-              type="text"
-              placeholder="Chem kit, fridge, Krugman..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-8 pr-2 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 focus:outline-hidden"
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Results Count & Sort */}
-      <div className="flex justify-between items-center text-xs text-slate-500">
-        <div>Showing <strong className="text-slate-900">{filteredRequests.length}</strong> active wanted requests across campus</div>
-        <div className="text-slate-600 font-medium">Sorted by: Most Urgent First</div>
-      </div>
-
-      {/* Wanted Request Cards Grid (Matching Page 4 in PDF) */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-        {filteredRequests.map((req) => (
-          <div
-            key={req.id}
-            className="bg-white rounded-2xl border border-slate-200 p-5 shadow-xs hover:shadow-lg hover:border-blue-300 transition-all flex flex-col justify-between space-y-4"
-          >
-            <div>
-              {/* User header */}
-              <div className="flex justify-between items-start gap-2 mb-3">
-                <div className="flex items-center gap-2.5">
-                  <img
-                    src={req.avatar}
-                    alt={req.user}
-                    className="w-9 h-9 rounded-full object-cover ring-1 ring-emerald-500"
-                  />
-                  <div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="font-bold text-xs text-slate-900">{req.user}</span>
-                      <span className="text-[9px] px-1 py-0.2 rounded bg-emerald-100 text-emerald-800 font-bold">.edu verified</span>
-                    </div>
-                    <div className="text-[10px] text-slate-500">{req.standing}</div>
-                  </div>
-                </div>
-                <span className="text-[10px] text-slate-400 whitespace-nowrap">{req.timeAgo}</span>
-              </div>
-
-              {/* Badges strip */}
-              <div className="flex flex-wrap items-center gap-1.5 mb-2.5">
-                <span className={`text-[10px] font-black px-2 py-0.5 rounded uppercase tracking-wider ${
-                  req.urgencyColor === 'red' ? 'bg-red-50 text-red-700 border border-red-200' :
-                  req.urgencyColor === 'amber' ? 'bg-amber-50 text-amber-800 border border-amber-200' :
-                  'bg-blue-50 text-blue-700 border border-blue-200'
-                }`}>
-                  {req.urgency}
-                </span>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-700">
-                  {req.tag}
-                </span>
-              </div>
-
-              {/* Title & Description */}
-              <h3 className="font-bold text-slate-900 text-sm leading-snug mb-1.5">
-                {req.title}
-              </h3>
-              <p className="text-slate-600 text-xs leading-relaxed line-clamp-3">
-                {req.description}
-              </p>
-
-              {/* Campus Meetup Zone */}
-              <div className="flex items-center gap-1.5 text-[11px] text-slate-500 mt-3">
-                <MapPin className="w-3.5 h-3.5 text-blue-700 shrink-0" />
-                <span>Zone: {req.campus}</span>
-              </div>
-            </div>
-
-            {/* Bottom Budget & Action */}
-            <div className="pt-3 border-t border-slate-100 space-y-3">
-              <div className="flex items-center justify-between text-xs">
-                <div>
-                  <div className="text-[10px] uppercase font-bold text-slate-400">Offered Budget</div>
-                  <div className="text-base font-black text-slate-900">{req.budget}</div>
-                </div>
-                <div className="text-right">
-                  <div className="text-[10px] uppercase font-bold text-slate-400">Activity</div>
-                  <div className="text-[11px] font-bold text-emerald-700">{req.activity}</div>
-                </div>
-              </div>
-
-              <button
-                onClick={() => onOpenOfferModal(req)}
-                className="w-full py-2.5 bg-blue-900 hover:bg-blue-800 text-white rounded-xl font-bold text-xs shadow-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer"
-              >
-                <Send className="w-3.5 h-3.5 text-amber-300" />
-                <span>Offer Item to Student</span>
-              </button>
-            </div>
-
-          </div>
+            {cat.label} {cat.count}
+          </button>
         ))}
       </div>
 
-      {/* Informative Blue Banner (Matching PDF Page 4 bottom) */}
-      <div className="bg-emerald-900 text-white p-5 rounded-2xl shadow-md flex items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-emerald-800 rounded-xl text-emerald-300">
-            <ShieldCheck className="w-6 h-6" />
-          </div>
-          <div>
-            <h4 className="font-bold text-sm">Have an item a classmate is looking for?</h4>
-            <p className="text-xs text-emerald-200">
-              Connect directly through CampusZon instant messaging. Payments are held in escrow or settled at verified 24/7 CCTV Campus Meetup Hubs.
-            </p>
+      <div className="filter-bar">
+        <select className="filter-select" value={urgencyFilter} onChange={(e) => setUrgencyFilter(e.target.value)} aria-label="Urgency timeline">
+          <option value="all">Any Urgency Window</option>
+          <option value="urgent">Urgent (&lt; 24h)</option>
+          <option value="week">This Week</option>
+        </select>
+        <select className="filter-select" aria-label="Offered budget">
+          <option>All Payout Levels</option>
+          <option>Under $25</option>
+          <option>$25 – $75</option>
+          <option>$75+</option>
+        </select>
+        <select className="filter-select" aria-label="Campus zone">
+          <option>Entire {campus.short} Hub</option>
+          <option>{lm[2]} &amp; {lm[3]}</option>
+          <option>{lm[4]} &amp; Southside</option>
+        </select>
+        <input
+          className="form-input"
+          type="text"
+          placeholder="Chem kit, fridge, Krugman…"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          style={{ flex: 1, minWidth: 'calc(140*var(--u))', width: 'auto' }}
+          aria-label="Search wanted requests"
+        />
+      </div>
+      <div style={{ fontSize: 'calc(11.5*var(--u))', color: 'var(--muted)', marginBottom: 'calc(20*var(--u))' }}>
+        Showing <strong style={{ color: 'var(--navy)' }}>{filtered.length} active wanted requests</strong> across campus &nbsp;·&nbsp; Sorted by: <strong>Most Urgent First</strong>
+      </div>
+
+      {filtered.length === 0 ? (
+        <div className="card" style={{ padding: 'calc(40*var(--u))', textAlign: 'center', marginBottom: 'calc(40*var(--u))', color: 'var(--muted)' }}>
+          No requests match those filters yet. Try clearing the search box.
+        </div>
+      ) : (
+        <div className="wanted-grid">
+          {filtered.map((req, i) => {
+            const border = BORDER[req.urgencyColor] ?? '#0f1fa8';
+            const initials = req.user.split(' ').map((w) => w[0]).join('').slice(0, 2).toUpperCase();
+            const urgencyStyle =
+              req.urgencyColor === 'red'
+                ? undefined
+                : req.urgencyColor === 'amber'
+                ? { background: 'var(--amber-bg)', color: 'var(--amber)' }
+                : { background: '#eef1fc', color: 'var(--blue)' };
+            return (
+              <div key={req.id} className="wanted-card rise" style={{ animationDelay: `${i * 60}ms` }}>
+                <div className="wanted-top-border" style={{ background: border }} />
+                <div className="wanted-body">
+                  <div className="wanted-avatar-row">
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 'calc(8*var(--u))', marginBottom: 'calc(4*var(--u))' }}>
+                        <div className="wanted-avatar" style={{ background: '#1a3a6b' }}>
+                          {req.avatar ? (
+                            <img src={req.avatar} alt="" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover', position: 'absolute', inset: 0 }} onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+                          ) : null}
+                          <span>{initials}</span>
+                          <div className="wanted-verified">
+                            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 8l3.5 3.5L13 4" /></svg>
+                          </div>
+                        </div>
+                        <div>
+                          <div className="wanted-name">{req.user}</div>
+                          <div className="wanted-class">{req.standing}</div>
+                        </div>
+                      </div>
+                      <span className="pill pill-mint" style={{ fontSize: 'calc(8.5*var(--u))' }}>✓ .edu verified</span>
+                    </div>
+                    <span className="wanted-time">{req.timeAgo}</span>
+                  </div>
+
+                  <div className="chip-row">
+                    <span className={`chip${req.urgencyColor === 'red' ? ' chip-red' : ''}`} style={urgencyStyle}>{req.urgency}</span>
+                    <span className="chip chip-grey">{req.tag}</span>
+                  </div>
+                  <div style={{ fontSize: 'calc(10.5*var(--u))', color: 'var(--muted)', marginBottom: 'calc(8*var(--u))' }}>
+                    📍 Zone: {loc(req.campus)}
+                  </div>
+                  <div className="card-title" style={{ marginBottom: 'calc(6*var(--u))' }}>{req.title}</div>
+                  <div className="wanted-desc">{req.description}</div>
+                  <div className="budget-block">
+                    <div className="budget-col">
+                      <div className="budget-col-label">OFFERED BUDGET</div>
+                      <div className="budget-col-val">{req.budget}</div>
+                    </div>
+                    <div className="budget-col">
+                      <div className="budget-col-label">ACTIVITY</div>
+                      <div className="budget-col-val" style={{ fontSize: 'calc(11.5*var(--u))', color: '#16a34a' }}>● {req.activity}</div>
+                    </div>
+                  </div>
+                  <button type="button" className="btn btn-primary btn-full" onClick={() => onOpenOfferModal(req)}>
+                    Offer Item to Student
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      <div className="helper-bar">
+        <div className="helper-shield">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 2L4 6v5c0 5.5 3.5 10.7 8 12 4.5-1.3 8-6.5 8-12V6L12 2z" />
+            <path d="M9 12l2 2 4-4" />
+          </svg>
+        </div>
+        <div>
+          <div style={{ fontSize: 'calc(13*var(--u))', fontWeight: 700, color: 'var(--navy)' }}>Have an item a classmate is looking for?</div>
+          <div style={{ fontSize: 'calc(11.5*var(--u))', color: 'var(--muted)' }}>
+            Connect directly through CampusZon instant messaging. Payments are held in escrow or settled at verified 24/7 CCTV Campus Meetup Hubs.
           </div>
         </div>
-        <button className="hidden sm:block whitespace-nowrap text-xs font-bold text-amber-300 hover:underline">
+        <button
+          type="button"
+          className="btn btn-ghost-dark btn-sm"
+          style={{ marginLeft: 'auto', whiteSpace: 'nowrap' }}
+          onClick={() => onNavigate?.('verification')}
+        >
           View Verified Meetup Zones →
         </button>
       </div>
 
-      {/* How Wanted & ISO Posts Work 3-Step Guide (Matching PDF Page 4) */}
-      <div className="bg-slate-50 rounded-3xl p-8 border border-slate-200 space-y-6">
-        <div className="text-center space-y-1">
-          <span className="text-[10px] uppercase font-bold tracking-widest text-blue-700">SIMPLE CAMPUS MECHANISM</span>
-          <h3 className="text-2xl font-black text-slate-900">How Wanted & ISO Posts Work</h3>
-          <p className="text-slate-500 text-xs max-w-lg mx-auto">
-            Save money and reduce campus waste by tapping into unused items sitting right inside dorms and student apartments.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-2">
-          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-2">
-            <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-900 font-black text-sm flex items-center justify-center">
-              1
+      <div className="section-sm">
+        <div className="micro-label" style={{ textAlign: 'center', marginBottom: 'calc(8*var(--u))' }}>SIMPLE CAMPUS MECHANISM</div>
+        <h2 style={{ textAlign: 'center', marginBottom: 'calc(4*var(--u))' }}>How Wanted &amp; ISO Posts Work</h2>
+        <p style={{ textAlign: 'center', fontSize: 'calc(12*var(--u))', color: 'var(--muted)', maxWidth: 'calc(520*var(--u))', margin: '0 auto' }}>
+          Save money and reduce campus waste by tapping into unused items sitting right inside dorms and student apartments.
+        </p>
+        <div className="hiw-grid">
+          {STEPS.map((s) => (
+            <div key={s.num} className="hiw-card" style={{ background: s.bg }}>
+              <div className="hiw-num" style={{ color: 'rgba(15,31,168,0.25)' }}>{s.num}</div>
+              <div className="hiw-title">{s.title}</div>
+              <div className="hiw-desc">
+                {s.desc ?? `Choose one of 14 official security-monitored trading hubs (${lm[0]}, ${lm[1]}, ${lm[2]} Commons) to inspect and complete the exchange.`}
+              </div>
+              <div className="hiw-footnote">{s.note}</div>
             </div>
-            <h4 className="font-bold text-slate-900 text-sm">Post what you need</h4>
-            <p className="text-slate-500 text-xs leading-relaxed">
-              Specify the textbook, lab equipment, furniture, or gadget you require, your deadline, and how much you are ready to pay or borrow it for.
-            </p>
-            <div className="text-[11px] text-blue-700 font-semibold pt-1">✓ Broadcasts to 15,000+ verified peers</div>
-          </div>
-
-          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-2">
-            <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-900 font-black text-sm flex items-center justify-center">
-              2
-            </div>
-            <h4 className="font-bold text-slate-900 text-sm">Classmates reply with offers</h4>
-            <p className="text-slate-500 text-xs leading-relaxed">
-              Students who have the item in their closet or dorm room reply with photos, condition grades, and counter-offers via in-app chat.
-            </p>
-            <div className="text-[11px] text-emerald-700 font-semibold pt-1">✓ Zero spam • .edu credentials verified</div>
-          </div>
-
-          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-2">
-            <div className="w-8 h-8 rounded-lg bg-slate-900 text-white font-black text-sm flex items-center justify-center">
-              3
-            </div>
-            <h4 className="font-bold text-slate-900 text-sm">Meet safely on campus to swap</h4>
-            <p className="text-slate-500 text-xs leading-relaxed">
-              Choose one of 14 official security-monitored trading hubs (Moffitt Library, MLK Union, Unit 1 Commons) to inspect and complete the exchange.
-            </p>
-            <div className="text-[11px] text-slate-700 font-semibold pt-1">✓ Campus security monitored hubs</div>
-          </div>
+          ))}
         </div>
       </div>
-
     </div>
   );
 }
