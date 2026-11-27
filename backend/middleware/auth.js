@@ -1,66 +1,49 @@
-const { verifyToken } = require('../utils/auth');
-const { findUserById } = require('../utils/dataStore');
+const jwt = require('jsonwebtoken');
+const User = require('../models/User');
+const config = require('../config');
+const AppError = require('../utils/AppError');
 
-const extractToken = (req) => {
+const readToken = (req) => {
   const header = req.headers.authorization || '';
-  const [scheme, token] = header.split(' ');
-  return scheme === 'Bearer' && token ? token : null;
+  return header.startsWith('Bearer ') ? header.slice(7).trim() : null;
 };
 
-// Requires a valid login. Attaches req.user = { id, name, email, role, campusId }
-const authenticate = async (req, res, next) => {
+const userFromToken = async (token) => {
   try {
-    const payload = verifyToken(extractToken(req));
-    if (!payload) {
-      return res.status(401).json({ success: false, message: 'Please log in to continue' });
-    }
-    // Re-check the account on every request so deactivated users lose access immediately
-    const user = await findUserById(payload.sub);
-    if (!user || user.isActive === false) {
-      return res.status(401).json({ success: false, message: 'Account not found or deactivated' });
-    }
-    req.user = {
-      id: String(user._id),
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      campusId: user.campusId
-    };
-    next();
-  } catch (err) {
-    next(err);
+    const payload = jwt.verify(token, config.jwt.secret, { algorithms: ['HS256'] });
+    return await User.findById(payload.sub);
+  } catch {
+    return null;
   }
 };
 
-// Use after authenticate. Example: requireRole('admin')
-const requireRole = (...roles) => (req, res, next) => {
-  if (!req.user) {
-    return res.status(401).json({ success: false, message: 'Please log in to continue' });
-  }
-  if (!roles.includes(req.user.role)) {
-    return res.status(403).json({ success: false, message: 'You do not have permission to do that' });
+/** Requires a valid token; sets req.user. */
+const protect = async (req, res, next) => {
+  const token = readToken(req);
+  if (!token) throw new AppError(401, 'Please log in to continue.', 'AUTH_REQUIRED');
+  const user = await userFromToken(token);
+  if (!user) throw new AppError(401, 'Your session has expired. Please log in again.', 'AUTH_INVALID');
+  req.user = user;
+  next();
+};
+
+/** Sets req.user when a valid token is present, otherwise continues anonymously. */
+const optionalAuth = async (req, res, next) => {
+  const token = readToken(req);
+  if (token) req.user = (await userFromToken(token)) || undefined;
+  next();
+};
+
+const requireVerified = (req, res, next) => {
+  if (!req.user.isVerified) {
+    throw new AppError(403, 'Please verify your campus email first.', 'EMAIL_NOT_VERIFIED');
   }
   next();
 };
 
-// Tiny in-memory rate limiter for login/signup (per IP + route)
-const rateLimit = ({ windowMs = 15 * 60 * 1000, max = 20 } = {}) => {
-  const hits = new Map();
-  return (req, res, next) => {
-    const ip = (req.socket && req.socket.remoteAddress) || req.ip || 'unknown';
-    const key = `${ip}:${req.path}`;
-    const now = Date.now();
-    const entry = hits.get(key);
-    if (!entry || entry.reset < now) {
-      hits.set(key, { count: 1, reset: now + windowMs });
-      return next();
-    }
-    entry.count += 1;
-    if (entry.count > max) {
-      return res.status(429).json({ success: false, message: 'Too many attempts. Please try again later.' });
-    }
-    next();
-  };
+const requireAdmin = (req, res, next) => {
+  if (req.user.role !== 'admin') throw new AppError(403, 'Admin access required.', 'FORBIDDEN');
+  next();
 };
 
-module.exports = { authenticate, requireRole, rateLimit };
+module.exports = { protect, optionalAuth, requireVerified, requireAdmin };

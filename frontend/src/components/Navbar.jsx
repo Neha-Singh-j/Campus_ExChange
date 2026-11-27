@@ -1,19 +1,17 @@
 import { useEffect, useState } from 'react';
-import CampusSelector from './CampusSelector';
 import LogoMark from './LogoMark';
-import { CURRENT_USER } from '../data/mockData';
+import { useCampus } from '../context/useCampus';
+import { initialsOf } from '../utils/format';
 
 const NAV_ITEMS = [
   { id: 'marketplace', label: 'Marketplace' },
-  { id: 'bundles', label: 'Move-Out Bundles', isNew: true },
   { id: 'wanted', label: 'Wanted Board' },
   { id: 'advanced-search', label: 'Advanced Search' },
   { id: 'wishlist', label: 'Wishlist' },
-  { id: 'verification', label: 'Student Verification' },
-  { id: 'synopsis', label: 'Synopsis' },
 ];
 
-export default function Navbar({ activeTab, setActiveTab, onOpenPostModal, wishlistCount, onOpenNotification }) {
+export default function Navbar({ activeTab, setActiveTab, onOpenPostModal, wishlistCount, user, onLogin, onSignup, onLogout }) {
+  const { campus } = useCampus();
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -29,12 +27,7 @@ export default function Navbar({ activeTab, setActiveTab, onOpenPostModal, wishl
     window.scrollTo({ top: 0 });
   };
 
-  const initials = CURRENT_USER.name
-    .split(' ')
-    .map((w) => w[0])
-    .join('')
-    .slice(0, 2)
-    .toUpperCase();
+  const initials = user ? initialsOf(user.name) : '';
 
   const renderLink = (item, withExtras) => (
     <button key={item.id} type="button" className={`nav-link${activeTab === item.id ? ' active' : ''}`} onClick={() => go(item.id)}>
@@ -48,13 +41,13 @@ export default function Navbar({ activeTab, setActiveTab, onOpenPostModal, wishl
     <>
       <header className={`header${scrolled ? ' scrolled' : ''}`} id="main-header">
         <div className="header-inner">
-          <button type="button" className="logo-wrap" onClick={() => go('marketplace')} aria-label="CampusZon home">
+          <button type="button" className="logo-wrap" onClick={() => go('marketplace')} aria-label="Campus Exchange home">
             <LogoMark />
-            <span className="logo-word">CampusZon</span>
+            <span className="logo-word">Campus Exchange</span>
           </button>
 
-          <div className="hide-mobile">
-            <CampusSelector />
+          <div className="hide-mobile" style={{ fontSize: 12, fontWeight: 700, color: 'var(--muted)', whiteSpace: 'nowrap' }}>
+            🎓 {campus.name}
           </div>
 
           <nav className="nav-links">{NAV_ITEMS.map((item) => renderLink(item, true))}</nav>
@@ -66,20 +59,24 @@ export default function Navbar({ activeTab, setActiveTab, onOpenPostModal, wishl
               </svg>
               <span className="btn-post-text">Post an Item</span>
             </button>
-            <button type="button" className="bell-btn" onClick={onOpenNotification} aria-label="Notifications">
-              <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
-                <path d="M9 1a5 5 0 0 1 5 5v3l1.5 2.5H2.5L4 9V6a5 5 0 0 1 5-5zM7 15.5a2 2 0 0 0 4 0" />
-              </svg>
-              <span className="bell-dot" />
-            </button>
-            <div className="profile-wrap" onClick={() => go('verification')} title="Student verification & ID status">
-              <div className="profile-avatar">{initials}</div>
-              <div className="verified-badge-sm">
-                <svg viewBox="0 0 7 7" fill="none" stroke="#fff" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M1.5 3.5l1.5 1.5 2.5-3" />
-                </svg>
-              </div>
-            </div>
+            {user ? (
+              <>
+                <div className="profile-wrap" onClick={() => go('account')} title={`${user.name} - My account`}>
+                  <div className="profile-avatar">{initials}</div>
+                  <div className="verified-badge-sm">
+                    <svg viewBox="0 0 7 7" fill="none" stroke="#fff" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M1.5 3.5l1.5 1.5 2.5-3" />
+                    </svg>
+                  </div>
+                </div>
+                <button type="button" className="nav-link hide-mobile" onClick={onLogout}>Log out</button>
+              </>
+            ) : (
+              <>
+                <button type="button" className="nav-link" onClick={onLogin}>Log in</button>
+                <button type="button" className="nav-link hide-mobile" onClick={onSignup} style={{ fontWeight: 800 }}>Sign up</button>
+              </>
+            )}
             <button type="button" className="hamburger" aria-label="Menu" onClick={() => setMenuOpen(true)}>
               <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
                 <path d="M2 5h16M2 10h16M2 15h16" />
@@ -102,10 +99,14 @@ export default function Navbar({ activeTab, setActiveTab, onOpenPostModal, wishl
               ✕
             </button>
           </div>
-          <div style={{ marginBottom: 12 }}>
-            <CampusSelector />
-          </div>
+          <div style={{ marginBottom: 12, fontWeight: 700, color: 'var(--muted)' }}>🎓 {campus.name}</div>
           {NAV_ITEMS.map((item) => renderLink(item, false))}
+          {user && (
+            <>
+              <button type="button" className={`nav-link${activeTab === 'account' ? ' active' : ''}`} onClick={() => go('account')}>My Account</button>
+              <button type="button" className="nav-link" onClick={() => { setMenuOpen(false); onLogout(); }}>Log out</button>
+            </>
+          )}
           <div style={{ marginTop: 16 }}>
             <button
               type="button"

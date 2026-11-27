@@ -1,41 +1,40 @@
-import React, { useState } from 'react';
-import { X, Sparkles, AlertCircle, DollarSign, Clock, MapPin } from 'lucide-react';
+import { useState } from 'react';
+import { X, Sparkles, Loader2 } from 'lucide-react';
+import { useCampus } from '../context/useCampus';
 
 export default function PostWantedModal({ isOpen, onClose, onAddWanted }) {
+  const { campus } = useCampus();
   const [formData, setFormData] = useState({
     title: '',
     category: 'Textbooks & Notes',
-    urgency: 'Urgent (Needed by Thu Lab)',
-    budget: '$20 - $35',
-    campus: 'Latimer / Moffitt Library',
+    urgency: 'This Week',
+    budget: '',
+    campus: '',
     description: '',
   });
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.title || !formData.budget) return;
-
-    const newRequest = {
-      id: `wanted-${Date.now()}`,
-      user: "Alex Morgan",
-      standing: "Junior • Haas School of Business",
-      campus: formData.campus,
-      timeAgo: "Just now",
-      urgency: formData.urgency,
-      urgencyColor: formData.urgency.toLowerCase().includes('urgent') ? 'red' : 'blue',
-      tag: formData.category,
-      title: formData.title.startsWith('ISO:') || formData.title.startsWith('Wanted:') ? formData.title : `ISO: ${formData.title}`,
-      description: formData.description || "Looking for this item on campus. Can meet at any safe designated hub.",
-      budget: formData.budget,
-      activity: "0 offers received",
-      avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80",
-      category: formData.category,
-    };
-
-    onAddWanted(newRequest);
-    onClose();
+    setBusy(true);
+    setError('');
+    try {
+      const title = formData.title.trim();
+      await onAddWanted({
+        ...formData,
+        title: /^(ISO|Wanted):/i.test(title) ? title : `ISO: ${title}`,
+        campus: formData.campus || campus.meetupSpots[0],
+      });
+      setFormData((f) => ({ ...f, title: '', budget: '', description: '' }));
+      onClose();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (
@@ -49,7 +48,7 @@ export default function PostWantedModal({ isOpen, onClose, onAddWanted }) {
               <span className="text-xs px-2 py-0.5 rounded bg-emerald-400 text-slate-950 font-bold uppercase tracking-wider">
                 ISO Board
               </span>
-              <span className="text-xs text-blue-200">15,000+ Campus Peers</span>
+              <span className="text-xs text-blue-200">{campus.short} students</span>
             </div>
             <h3 className="text-lg font-bold text-white mt-1">Post a Wanted & ISO Request</h3>
             <p className="text-xs text-slate-300">Classmates with unused gear will reply directly with offers</p>
@@ -64,7 +63,12 @@ export default function PostWantedModal({ isOpen, onClose, onAddWanted }) {
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4 text-xs">
-          
+          {error && (
+            <div role="alert" className="p-3 rounded-lg bg-red-50 border border-red-200 text-red-800 font-semibold">
+              {error}
+            </div>
+          )}
+
           <div>
             <label className="block font-bold text-slate-700 mb-1">What are you looking for? *</label>
             <input
@@ -99,11 +103,9 @@ export default function PostWantedModal({ isOpen, onClose, onAddWanted }) {
                 onChange={(e) => setFormData({ ...formData, urgency: e.target.value })}
                 className="w-full px-3 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-600 focus:outline-hidden text-slate-900 bg-white"
               >
-                <option>Urgent (Needed by Thu Lab)</option>
-                <option>Urgent (Career Fair Friday)</option>
+                <option>Urgent</option>
                 <option>This Week</option>
-                <option>Any Time / Before Finals</option>
-                <option>Trade Eligible</option>
+                <option>Flexible</option>
               </select>
             </div>
           </div>
@@ -114,7 +116,7 @@ export default function PostWantedModal({ isOpen, onClose, onAddWanted }) {
               <input
                 type="text"
                 required
-                placeholder="e.g. $20 - $35 or $15 + Trade"
+                placeholder={`e.g. ${campus.currency}300 - ${campus.currency}500`}
                 value={formData.budget}
                 onChange={(e) => setFormData({ ...formData, budget: e.target.value })}
                 className="w-full px-3 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-600 focus:outline-hidden text-slate-900 font-semibold"
@@ -124,7 +126,7 @@ export default function PostWantedModal({ isOpen, onClose, onAddWanted }) {
               <label className="block font-bold text-slate-700 mb-1">Preferred Campus Zone</label>
               <input
                 type="text"
-                placeholder="e.g. Moffitt / Latimer / Unit 1"
+                placeholder={`e.g. ${campus.meetupSpots[0]}`}
                 value={formData.campus}
                 onChange={(e) => setFormData({ ...formData, campus: e.target.value })}
                 className="w-full px-3 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-600 focus:outline-hidden text-slate-900"
@@ -160,8 +162,10 @@ export default function PostWantedModal({ isOpen, onClose, onAddWanted }) {
             </button>
             <button
               type="submit"
-              className="px-5 py-2 rounded-lg bg-blue-900 hover:bg-blue-800 text-white font-bold shadow-md hover:shadow-lg transition-all"
+              disabled={busy}
+              className="px-5 py-2 rounded-lg bg-blue-900 hover:bg-blue-800 disabled:opacity-60 text-white font-bold shadow-md hover:shadow-lg transition-all flex items-center gap-1.5"
             >
+              {busy && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
               Broadcast Request
             </button>
           </div>

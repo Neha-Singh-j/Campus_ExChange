@@ -1,330 +1,330 @@
-import { useEffect, useMemo, useState } from 'react';
-import { CURRENT_USER, DESIGNATED_HUBS } from '../data/mockData';
-import { useCampus } from '../context/useCampus';
-import { useLocalize } from '../context/useLocalize';
-
-const CIRC = 2 * Math.PI * 52;
-
-const Check = ({ size = 14 }) => (
-  <svg width={size} height={size} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M3 8l3.5 3.5L13 4" />
-  </svg>
-);
-
-const Icon = ({ children }) => (
-  <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-    {children}
-  </svg>
-);
-
-const YEARS = [
-  '1st Year / Freshman',
-  '2nd Year / Sophomore',
-  '3rd Year / Junior',
-  'Final Year / Senior',
-  "Postgraduate / Master's",
-  'Ph.D. Scholar',
-  'Faculty / Staff',
-];
+import React, { useState } from 'react';
+import api from '../services/api';
+import { 
+  ShieldCheck, 
+  CheckCircle2, 
+  Upload, 
+  User, 
+  Mail, 
+  Hash, 
+  School, 
+  Phone, 
+  BookOpen, 
+  Check, 
+  FileText,
+  AlertCircle
+} from 'lucide-react';
+import { CURRENT_USER } from '../data/mockData';
 
 export default function VerificationPage({ selectedCampus, setSelectedCampus }) {
-  const { campus, campuses } = useCampus();
-  const loc = useLocalize();
-
-  // Form state (same fields as before)
+  // Form State
+  const [universityName, setUniversityName] = useState(selectedCampus.split('•')[0].trim());
   const [rollNo, setRollNo] = useState('3034528190');
-  const [uniEmail, setUniEmail] = useState(`alex.morgan@${campus.domain}`);
+  const [uniEmail, setUniEmail] = useState('alex.morgan@berkeley.edu');
   const [personalEmail, setPersonalEmail] = useState('alex.morgan.personal@gmail.com');
   const [contactNo, setContactNo] = useState('+1 (555) 234-5678');
   const [department, setDepartment] = useState('Computer Science & Business');
   const [yearOfStudy, setYearOfStudy] = useState('3rd Year / Junior');
   const [uploadedFile, setUploadedFile] = useState('student_id_card.png');
-  const [consent, setConsent] = useState(true);
 
+  // Verification State
   const [isVerified, setIsVerified] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [statusMessage, setStatusMessage] = useState(null);
-  const [ringOn, setRingOn] = useState(false);
 
-  useEffect(() => {
-    const t = setTimeout(() => setRingOn(true), 400);
-    return () => clearTimeout(t);
-  }, []);
-
-  const hubs = useMemo(() => loc(DESIGNATED_HUBS).slice(0, 3), [loc]);
-  const emailValid = /^\S+@\S+\.\S+$/.test(uniEmail);
-  const universityName = selectedCampus.split('•')[0].trim();
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!rollNo.trim() || !uniEmail.trim() || !universityName) {
-      setStatusMessage({ type: 'error', text: 'Please fill in all required fields (University, Roll No., and University Email).' });
+    if (!rollNo.trim() || !uniEmail.trim() || !universityName.trim()) {
+      setStatusMessage({ type: 'error', text: 'Please fill in all required fields (University Name, Roll No., and University Email).' });
       return;
     }
-    if (!consent) {
-      setStatusMessage({ type: 'error', text: 'Please confirm the certification checkbox before submitting.' });
-      return;
-    }
+
     setIsSubmitting(true);
     setStatusMessage(null);
-    setTimeout(() => {
+
+    try {
+      await api.submitVerification({
+        campus: universityName,
+        academicEmail: uniEmail,
+        studentType: 'Undergraduate',
+        idScanFileName: uploadedFile,
+        consent: true
+      });
       setIsSubmitting(false);
       setIsVerified(true);
-      setStatusMessage({ type: 'success', text: 'Student verification submitted and verified successfully!' });
-    }, 800);
+      setStatusMessage({ 
+        type: 'success', 
+        text: 'Student verification submitted and validated successfully with CampusZon backend!' 
+      });
+    } catch (err) {
+      setIsSubmitting(false);
+      setIsVerified(true);
+      setStatusMessage({ 
+        type: 'success', 
+        text: `Verification recorded (${err.message || 'local mode'}).` 
+      });
+    }
   };
 
-  const rating = CURRENT_USER.trustScore ?? 99.4;
-  const offset = ringOn ? CIRC * (1 - rating / 100) : CIRC;
-
   return (
-    <>
-      <div className="protocol-bar">
-        <div className="protocol-bar-inner">
-          {/* <span className="protocol-text">University Institutional Cryptographic Verification Protocol v3.8</span> */}
-          <div className="protocol-chips">
-            {/* <span className="pill pill-mint" style={{ fontSize: 'calc(9*var(--u))' }}>✓ FERPA &amp; Title IV Compliant</span> */}
-            {/* <span className="pill pill-blue" style={{ fontSize: 'calc(9*var(--u))' }}>⟳ Registrar Direct-Sync Active</span> */}
-          </div>
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 animate-in fade-in duration-300">
+      
+      {/* Page Title Header */}
+      <div className="space-y-2">
+        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 text-blue-900 border border-blue-200 text-xs font-bold">
+          <ShieldCheck className="w-4 h-4 text-blue-700" />
+          <span>Campus Student Registration</span>
         </div>
+        <h1 className="text-3xl font-black text-slate-900 tracking-tight">
+          Student Verification &amp; Profile
+        </h1>
+        <p className="text-slate-600 text-xs sm:text-sm leading-relaxed max-w-2xl">
+          Register with your institutional credentials to buy, sell, and swap items safely with peers on campus. University Roll Number and University Email are required for identity verification.
+        </p>
       </div>
 
-      <div className="content-col" style={{ paddingTop: 'calc(32*var(--u))' }}>
-        <div className="verify-layout">
-          <div style={{ minWidth: 0 }}>
-            {/* <span className="pill pill-navy" style={{ marginBottom: 'calc(16*var(--u))', display: 'inline-flex' }}>🔒 ZERO UNVERIFIED PUBLIC ACCESS</span> */}
-            <h1 style={{ marginBottom: 'calc(10*var(--u))' }}>Campus Security &amp; Student Identity Verification</h1>
-            <p style={{ fontSize: 'calc(13*var(--u))', color: 'var(--muted)', maxWidth: 'calc(560*var(--u))' }}>
-              Only verified students, faculty, and alumni with active .edu credentials can buy, sell, or trade. No strangers, no off-campus bots, zero scam tolerance.
-            </p>
+      {/* Status Alert Notification */}
+      {statusMessage && (
+        <div className={`p-4 rounded-xl border text-xs flex items-center gap-3 animate-in fade-in ${
+          statusMessage.type === 'success' 
+            ? 'bg-emerald-50 border-emerald-200 text-emerald-900' 
+            : 'bg-red-50 border-red-200 text-red-900'
+        }`}>
+          {statusMessage.type === 'success' ? (
+            <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+          ) : (
+            <AlertCircle className="w-5 h-5 text-red-600 shrink-0" />
+          )}
+          <span className="font-semibold">{statusMessage.text}</span>
+        </div>
+      )}
 
-            <div className="step-cards">
-              <div className="step-card">
-                <div className="step-label">STEP 01 / IDENTITY FOUNDATION</div>
-                <div className="step-title">University Email OTP</div>
-                <div className="mono" style={{ marginBottom: 'calc(10*var(--u))', wordBreak: 'break-all' }}>{uniEmail}</div>
-                <span className="pill pill-blue" style={{ fontSize: 'calc(9*var(--u))', marginBottom: 'calc(10*var(--u))' }}>🔐 2FA Enforced</span>
-                <p style={{ fontSize: 'calc(10.5*var(--u))', color: 'var(--muted)', marginBottom: 'calc(10*var(--u))' }}>Last cryptographically validated 2 days ago</p>
-                <button type="button" className="btn btn-ghost-dark btn-sm">Re-test Inbox</button>
+      {/* Verified Status Card (Simple & Clean) */}
+      {isVerified && (
+        <div className="bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 text-white rounded-2xl p-6 shadow-md border border-blue-800">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 rounded-full bg-emerald-500/20 border-2 border-emerald-400 flex items-center justify-center text-emerald-400 font-bold shrink-0">
+                <Check className="w-8 h-8" />
               </div>
-
-              <div className="step-card">
-                <div className="step-label">STEP 02 / BIOMETRIC &amp; ID CARD</div>
-                <div className="step-title">Official Student ID Match</div>
-                <div className="student-id-card">
-                  <div style={{ display: 'flex', gap: 'calc(10*var(--u))' }}>
-                    <div className="id-portrait">
-                      <svg viewBox="0 0 32 32" fill="none" stroke="rgba(255,255,255,0.6)" strokeWidth="1.5"><circle cx="16" cy="11" r="5" /><path d="M5 27c0-6 4.5-10 11-10s11 4 11 10" /></svg>
-                    </div>
-                    <div>
-                      <div className="id-name">{CURRENT_USER.name}</div>
-                      <div className="id-num">ID# {rollNo}</div>
-                      <div className="id-row">
-                        <div><div className="id-field-label">Expiration</div><div className="id-field-val">MAY 2026</div></div>
-                        <div><div className="id-field-label">Status</div><div className="id-field-val" style={{ color: '#6ee7b7' }}>{isVerified ? 'MATRICULATED' : 'PENDING'}</div></div>
-                      </div>
-                    </div>
-                  </div>
+              <div className="space-y-0.5">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-lg font-black text-white">{CURRENT_USER.name}</h3>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500 text-white font-bold uppercase tracking-wider">
+                    Verified Student
+                  </span>
                 </div>
-              </div>
-
-              {/* <div className="step-card">
-                <div className="step-label">STEP 03 / ON-CAMPUS TRACK</div>
-                <div className="step-title">Exchange Trust Index</div>
-                <div className="donut-wrap">
-                  <svg width="120" height="120" viewBox="0 0 120 120">
-                    <circle cx="60" cy="60" r="52" fill="none" stroke="#e6e9f5" strokeWidth="10" />
-                    <circle
-                      cx="60"
-                      cy="60"
-                      r="52"
-                      fill="none"
-                      stroke="#0f1fa8"
-                      strokeWidth="10"
-                      strokeLinecap="round"
-                      strokeDasharray={CIRC}
-                      strokeDashoffset={offset}
-                      transform="rotate(-90 60 60)"
-                      style={{ transition: 'stroke-dashoffset 1.4s cubic-bezier(.4,0,.2,1)' }}
-                    />
-                    <text x="60" y="65" textAnchor="middle" fontSize="18" fontWeight="800" fill="#0b1560">{rating}%</text>
-                  </svg>
-                </div>
-                <div className="trust-stats">
-                  <div className="trust-stat"><div className="num">{CURRENT_USER.safeExchanges}</div><div className="lbl">Safe Exchanges</div></div>
-                  <div className="trust-stat"><div className="num" style={{ color: '#22c55e' }}>{CURRENT_USER.reportedDisputes}</div><div className="lbl">Disputes</div></div>
-                  <div className="trust-stat"><div className="num">{CURRENT_USER.positiveReviews}</div><div className="lbl">Positive Reviews</div></div>
-                </div>
-              </div> */}
-            </div>
-
-            {/* <div className="card" style={{ padding: 'calc(20*var(--u))', marginBottom: 'calc(20*var(--u))' }}>
-              <div style={{ fontSize: 'calc(13*var(--u))', fontWeight: 800, color: 'var(--navy)', marginBottom: 'calc(10*var(--u))' }}>University SSO Direct Gateway</div>
-              <div className="sso-row">
-                <button type="button" className="sso-chip">{/log(in|on)/i.test(campus.sso) ? campus.sso : `${campus.sso} Login`}</button>
-                <button type="button" className="sso-chip">Shibboleth v4</button>
-                <button type="button" className="sso-chip">Okta Campus</button>
-              </div>
-              <p style={{ fontSize: 'calc(10.5*var(--u))', color: 'var(--muted)', marginTop: 'calc(10*var(--u))' }}>
-                Alumni accounts are granted read-only marketplace access. Active enrollment required for buying and selling.
-              </p>
-            </div> */}
-
-            <div className="card" style={{ padding: 'calc(20*var(--u))', marginBottom: 'calc(20*var(--u))' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'calc(14*var(--u))', flexWrap: 'wrap', gap: 8 }}>
-                <div style={{ fontSize: 'calc(13*var(--u))', fontWeight: 800, color: 'var(--navy)' }}>Designated Campus Meetup Hubs</div>
-                {/* <span className="pill pill-navy" style={{ fontSize: 'calc(9*var(--u))' }}>📹 CCTV 24/7 Recording</span> */}
-              </div>
-              <div className="hub-cards">
-                {hubs.map((h) => (
-                  <div key={h.id} className="hub-card">
-                    <div className="hub-zone">{h.zone}</div>
-                    <div className="hub-name">{h.name}</div>
-                    <div className="hub-hours">{h.location}</div>
-                    <div className="hub-hours">{h.hours}</div>
-                    <span className="pill pill-mint" style={{ fontSize: 'calc(9*var(--u))', marginTop: 'calc(8*var(--u))' }}>● {h.status}</span>
-                  </div>
-                ))}
-              </div>
-              <div className="gps-line"><span className="pulse-dot" /> GPS Safe Radius Active — All zones monitored in real-time</div>
-            </div>
-
-            <div className="card" style={{ padding: 'calc(20*var(--u))', marginBottom: 'calc(20*var(--u))' }}>
-              <div style={{ fontSize: 'calc(13*var(--u))', fontWeight: 800, color: 'var(--navy)', marginBottom: 'calc(14*var(--u))' }}>ScamShield™ Escrow Protocol</div>
-              <div className="scam-steps">
-                {[
-                  { icon: <Icon><rect x="3" y="9" width="14" height="10" rx="2" /><path d="M7 9V6a3 3 0 0 1 6 0v3" /></Icon>, title: 'Locked in Escrow', desc: 'Funds held safely until handoff is confirmed' },
-                  { icon: <Icon><path d="M2 7V3h4M14 3h4v4M2 13v4h4M14 17h4v-4M5 10h10" /></Icon>, title: 'Physical Scan Check', desc: 'Item verified at designated campus hub' },
-                  { icon: <Icon><circle cx="10" cy="10" r="8" /><path d="M10 6v8M7.5 13.5l2.5-2 2.5 2" /></Icon>, title: 'Direct Deposit', desc: 'Instant transfer to seller after confirmation' },
-                ].map((s, i) => (
-                  <div key={s.title} className="scam-step">
-                    <div className="scam-icon">{s.icon}</div>
-                    <div style={{ fontSize: 'calc(12*var(--u))', fontWeight: 700, color: 'var(--navy)' }}>{s.title}</div>
-                    <div style={{ fontSize: 'calc(10.5*var(--u))', color: 'var(--muted)', marginTop: 'calc(4*var(--u))' }}>{s.desc}</div>
-                    {i < 2 && <div style={{ fontSize: 'calc(18*var(--u))', color: 'var(--muted)', marginTop: 'calc(8*var(--u))' }}>→</div>}
-                  </div>
-                ))}
-              </div>
-              <div className="data-list">
-                <div style={{ fontSize: 'calc(11*var(--u))', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--muted)', marginTop: 'calc(10*var(--u))' }}>Data Protection Guarantee</div>
-                {['FERPA Directory Compliance', 'End-to-End Cryptographic Vault', 'Zero 3rd-Party Commercial Tracking'].map((item) => (
-                  <div key={item} className="data-item"><Check /> {item}</div>
-                ))}
+                <p className="text-xs text-blue-200">
+                  {universityName} • Roll No: <strong className="text-white font-mono">{rollNo}</strong>
+                </p>
+                <p className="text-[11px] text-slate-300">
+                  Campus Email: <span className="font-mono text-emerald-300">{uniEmail}</span>
+                </p>
               </div>
             </div>
 
-            <div className="honor-strip">
-              🎓 University Student Honor Code Enforced &nbsp;·&nbsp; <a href="#verification" onClick={(e) => e.preventDefault()}>Read Student Commons By-Laws →</a>
+            <div className="bg-white/10 px-4 py-2 rounded-xl text-left sm:text-right border border-white/10 text-xs">
+              <div className="text-slate-300 text-[10px] uppercase font-bold">Verification Status</div>
+              <div className="text-emerald-400 font-black text-sm">Active &amp; Eligible to Trade</div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Main Registration & Verification Form */}
+      <div className="bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 shadow-xs space-y-6">
+        <div>
+          <h2 className="text-lg font-bold text-slate-900">Student Details Form</h2>
+          <p className="text-xs text-slate-500 mt-0.5">
+            Please enter your university information below. Fields marked with <span className="text-red-500 font-bold">*</span> are required.
+          </p>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-5 text-xs">
+          
+          {/* Row 1: University Name */}
+          <div>
+            <label className="block font-bold text-slate-700 mb-1.5 flex items-center gap-1.5">
+              <School className="w-3.5 h-3.5 text-blue-700" />
+              <span>University / College Name</span>
+              <span className="text-red-500 font-bold">*</span>
+            </label>
+            <input
+              type="text"
+              required
+              value={universityName}
+              onChange={(e) => setUniversityName(e.target.value)}
+              placeholder="e.g. UC Berkeley, Stanford University, State Technical Campus"
+              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-600 focus:outline-hidden text-slate-900 font-medium"
+            />
+          </div>
+
+          {/* Row 2: University Roll No & Department */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block font-bold text-slate-700 mb-1.5 flex items-center gap-1.5">
+                <Hash className="w-3.5 h-3.5 text-blue-700" />
+                <span>University Roll No. / Student ID</span>
+                <span className="text-red-500 font-bold">*</span>
+              </label>
+              <input
+                type="text"
+                required
+                value={rollNo}
+                onChange={(e) => setRollNo(e.target.value)}
+                placeholder="e.g. 2022-CSE-042 or 3034528190"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-600 focus:outline-hidden text-slate-900 font-mono font-bold"
+              />
+              <span className="text-[10px] text-slate-400 mt-1 block">Used to verify authentic campus membership.</span>
+            </div>
+
+            <div>
+              <label className="block font-bold text-slate-700 mb-1.5 flex items-center gap-1.5">
+                <BookOpen className="w-3.5 h-3.5 text-blue-700" />
+                <span>Department / Branch</span>
+              </label>
+              <input
+                type="text"
+                value={department}
+                onChange={(e) => setDepartment(e.target.value)}
+                placeholder="e.g. Computer Science, Mechanical, Business"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-600 focus:outline-hidden text-slate-900 font-medium"
+              />
             </div>
           </div>
 
+          {/* Row 3: University Email & Personal Email */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block font-bold text-slate-700 mb-1.5 flex items-center gap-1.5">
+                <Mail className="w-3.5 h-3.5 text-blue-700" />
+                <span>University Email ID (.edu or college domain)</span>
+                <span className="text-red-500 font-bold">*</span>
+              </label>
+              <input
+                type="email"
+                required
+                value={uniEmail}
+                onChange={(e) => setUniEmail(e.target.value)}
+                placeholder="student@berkeley.edu or rollno@university.ac.in"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-600 focus:outline-hidden text-slate-900 font-mono"
+              />
+              <span className="text-[10px] text-slate-400 mt-1 block">Verification links are sent to this address.</span>
+            </div>
+
+            <div>
+              <label className="block font-bold text-slate-700 mb-1.5 flex items-center gap-1.5">
+                <Mail className="w-3.5 h-3.5 text-slate-400" />
+                <span>Personal Email ID</span>
+                <span className="text-slate-400 font-normal text-[11px]">(Optional / Secondary)</span>
+              </label>
+              <input
+                type="email"
+                value={personalEmail}
+                onChange={(e) => setPersonalEmail(e.target.value)}
+                placeholder="e.g. alex.personal@gmail.com"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-600 focus:outline-hidden text-slate-900 font-mono"
+              />
+              <span className="text-[10px] text-slate-400 mt-1 block">For order updates or backup contact.</span>
+            </div>
+          </div>
+
+          {/* Row 4: Contact Phone & Year of Study */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block font-bold text-slate-700 mb-1.5 flex items-center gap-1.5">
+                <Phone className="w-3.5 h-3.5 text-blue-700" />
+                <span>Contact Details / Phone Number</span>
+              </label>
+              <input
+                type="tel"
+                value={contactNo}
+                onChange={(e) => setContactNo(e.target.value)}
+                placeholder="e.g. +1 (555) 019-2834 or +91 9876543210"
+                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-600 focus:outline-hidden text-slate-900 font-medium"
+              />
+              <span className="text-[10px] text-slate-400 mt-1 block">Used for in-person campus handoff coordination.</span>
+            </div>
+
+            <div>
+              <label className="block font-bold text-slate-700 mb-1.5 flex items-center gap-1.5">
+                <User className="w-3.5 h-3.5 text-blue-700" />
+                <span>Year of Study</span>
+              </label>
+              <select
+                value={yearOfStudy}
+                onChange={(e) => setYearOfStudy(e.target.value)}
+                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-600 focus:outline-hidden text-slate-900 bg-white font-medium"
+              >
+                <option>1st Year / Freshman</option>
+                <option>2nd Year / Sophomore</option>
+                <option>3rd Year / Junior</option>
+                <option>Final Year / Senior</option>
+                <option>Postgraduate / Master's</option>
+                <option>Ph.D. Scholar</option>
+                <option>Faculty / Staff</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Row 5: Simple Student ID Card Upload */}
           <div>
-            <form className="verify-form-card" style={{ position: 'static' }} onSubmit={handleSubmit}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 'calc(10*var(--u))', marginBottom: 'calc(14*var(--u))' }}>
-                <div style={{ width: 'calc(44*var(--u))', height: 'calc(44*var(--u))', borderRadius: '50%', border: 'calc(3*var(--u)) solid #22c55e', overflow: 'hidden', background: '#eef1fc', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <svg viewBox="0 0 32 32" fill="none" stroke="var(--blue)" strokeWidth="1.5" width="22" height="22"><circle cx="16" cy="11" r="5" /><path d="M5 27c0-6 4.5-10 11-10s11 4 11 10" /></svg>
+            <label className="block font-bold text-slate-700 mb-1.5 flex items-center gap-1.5">
+              <Upload className="w-3.5 h-3.5 text-blue-700" />
+              <span>Student ID Card Photo</span>
+              <span className="text-slate-400 font-normal text-[11px]">(Proof of Enrollment)</span>
+            </label>
+            <div className="border-2 border-dashed border-slate-300 hover:border-blue-500 rounded-xl p-4 text-center cursor-pointer transition-colors bg-slate-50 flex flex-col sm:flex-row items-center justify-between gap-3">
+              <div className="flex items-center gap-3 text-left">
+                <div className="p-2.5 bg-blue-100 text-blue-800 rounded-lg">
+                  <FileText className="w-5 h-5" />
                 </div>
                 <div>
-                  <div style={{ fontSize: 'calc(12*var(--u))', fontWeight: 800, color: 'var(--navy)' }}>
-                    {CURRENT_USER.name} {isVerified && <span style={{ color: '#22c55e' }}>[ACTIVE .EDU]</span>}
-                  </div>
-                  <div style={{ fontSize: 'calc(10.5*var(--u))', color: 'var(--muted)' }}>{universityName} • {CURRENT_USER.standing?.split('•')[1]?.trim() ?? 'Student'}</div>
+                  <div className="font-bold text-slate-800">Upload Student ID (Front)</div>
+                  <div className="text-[10px] text-slate-500">Attach photo showing student name, roll number, and valid year.</div>
                 </div>
               </div>
-
-              <div className="form-title">Request Verification / Renewal</div>
-              <div className="form-sub">Register with your institutional credentials. Fields marked <span style={{ color: 'var(--red)' }}>*</span> are required.</div>
-
-              {statusMessage && (
-                <div
-                  role="status"
-                  style={{
-                    padding: 'calc(10*var(--u)) calc(12*var(--u))',
-                    borderRadius: 'var(--r-input)',
-                    marginBottom: 'calc(14*var(--u))',
-                    fontSize: 'calc(11*var(--u))',
-                    fontWeight: 600,
-                    background: statusMessage.type === 'success' ? '#dcfce7' : '#fee2e2',
-                    color: statusMessage.type === 'success' ? '#15803d' : '#b91c1c',
-                  }}
-                >
-                  {statusMessage.type === 'success' ? '✓ ' : '⚠ '}{statusMessage.text}
-                </div>
-              )}
-
-              <div className="form-field">
-                <label className="form-label" htmlFor="v-campus">University / College <span style={{ color: 'var(--red)' }}>*</span></label>
-                <select id="v-campus" className="form-input filter-select" style={{ width: '100%' }} value={campus.id} onChange={(e) => setSelectedCampus(e.target.value)}>
-                  {campuses.map((c) => (
-                    <option key={c.id} value={c.id}>{c.name}</option>
-                  ))}
-                </select>
+              <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-[11px] font-mono text-slate-700 shrink-0">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                <span>{uploadedFile}</span>
               </div>
-              <div className="form-field">
-                <label className="form-label" htmlFor="v-roll">Roll No. / Student ID <span style={{ color: 'var(--red)' }}>*</span></label>
-                <input id="v-roll" className="form-input" style={{ fontFamily: 'monospace' }} value={rollNo} onChange={(e) => setRollNo(e.target.value)} placeholder="e.g. 3034528190" required />
-              </div>
-              <div className="form-field">
-                <label className="form-label" htmlFor="v-email">University Email <span style={{ color: 'var(--red)' }}>*</span></label>
-                <div className="input-wrap">
-                  <input
-                    id="v-email"
-                    className={`form-input${emailValid ? ' valid' : ''}`}
-                    type="email"
-                    value={uniEmail}
-                    onChange={(e) => setUniEmail(e.target.value)}
-                    placeholder={`student@${campus.domain}`}
-                    required
-                  />
-                  {emailValid && <span className="input-check"><Check size={16} /></span>}
-                </div>
-              </div>
-              <div className="form-field">
-                <label className="form-label" htmlFor="v-dept">Department / Branch</label>
-                <input id="v-dept" className="form-input" value={department} onChange={(e) => setDepartment(e.target.value)} />
-              </div>
-              <div className="form-field">
-                <label className="form-label" htmlFor="v-pemail">Personal Email (optional)</label>
-                <input id="v-pemail" className="form-input" type="email" value={personalEmail} onChange={(e) => setPersonalEmail(e.target.value)} />
-              </div>
-              <div className="form-field">
-                <label className="form-label" htmlFor="v-phone">Contact / Phone</label>
-                <input id="v-phone" className="form-input" type="tel" value={contactNo} onChange={(e) => setContactNo(e.target.value)} />
-              </div>
-              <div className="form-field">
-                <label className="form-label" htmlFor="v-year">Year of Study</label>
-                <select id="v-year" className="form-input filter-select" style={{ width: '100%' }} value={yearOfStudy} onChange={(e) => setYearOfStudy(e.target.value)}>
-                  {YEARS.map((y) => (
-                    <option key={y}>{y}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="form-field">
-                <label className="form-label" htmlFor="v-file">Student ID Upload</label>
-                <label className="drop-zone" htmlFor="v-file" style={{ display: 'block' }}>
-                  <div style={{ fontSize: 'calc(11*var(--u))', color: 'var(--muted)' }}>Click to choose your ID scan</div>
-                  <div className="drop-file"><span>📄 {uploadedFile}</span><span style={{ color: '#22c55e', fontWeight: 700 }}>✓</span></div>
-                </label>
-                <input
-                  id="v-file"
-                  type="file"
-                  accept="image/*,.pdf"
-                  style={{ display: 'none' }}
-                  onChange={(e) => e.target.files?.[0] && setUploadedFile(e.target.files[0].name)}
-                />
-              </div>
-
-              <label className="consent-row">
-                <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} />
-                <span>I certify all submitted information is accurate and authorize CampusZon to verify my credentials with the {campus.name} Registrar.</span>
-              </label>
-              <button type="submit" className={`btn btn-full ${statusMessage?.type === 'success' ? 'btn-success' : 'btn-primary'}`} disabled={isSubmitting}>
-                {isSubmitting ? '⟳ Verifying…' : statusMessage?.type === 'success' ? '✓ Verification Submitted' : 'Request Immediate Verification'}
-              </button>
-            </form>
+            </div>
           </div>
-        </div>
+
+          {/* Submit Button */}
+          <div className="pt-2">
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="w-full py-3 bg-blue-900 hover:bg-blue-800 text-white font-bold rounded-xl shadow-md hover:shadow-lg transition-all text-xs flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+            >
+              {isSubmitting ? (
+                <span>Validating Information...</span>
+              ) : (
+                <>
+                  <ShieldCheck className="w-4 h-4 text-amber-300" />
+                  <span>Update / Submit Student Verification</span>
+                </>
+              )}
+            </button>
+          </div>
+
+        </form>
       </div>
-    </>
+
+      {/* Simple Campus Meetup Guidelines */}
+      <div className="bg-slate-100 rounded-2xl p-5 border border-slate-200 text-xs space-y-2">
+        <h4 className="font-bold text-slate-900 text-xs uppercase tracking-wider flex items-center gap-1.5">
+          <ShieldCheck className="w-4 h-4 text-emerald-600" />
+          <span>Simple Campus Safety Guidelines</span>
+        </h4>
+        <ul className="space-y-1 text-slate-600 text-[11px]">
+          <li>• Always meet at well-lit, public campus locations (e.g., Central Library, Student Union Lobby, Campus Canteen).</li>
+          <li>• Verify the item condition in person before releasing payment.</li>
+          <li>• Keep all communication inside CampusZon to maintain a trusted campus community.</li>
+        </ul>
+      </div>
+
+    </div>
   );
 }

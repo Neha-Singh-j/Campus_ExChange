@@ -188,7 +188,7 @@ export default function SynopsisPage() {
             4. Project Planning & Milestone Timeline (Gantt Chart)
           </h3>
           <p className="text-xs text-slate-600">
-            Project schedule starting from <strong>October 2026</strong> through completion in <strong>March 2026</strong>:
+            Project schedule starting from <strong>September 2025</strong> through completion in <strong>March 2026</strong>:
           </p>
 
           {/* Interactive Gantt Chart Visualization */}
@@ -197,9 +197,12 @@ export default function SynopsisPage() {
               {/* Header months */}
               <div className="grid grid-cols-12 gap-1 text-[11px] font-bold text-slate-500 uppercase pb-2 border-b border-slate-200 text-center">
                 <div className="col-span-4 text-left pl-2">Phase / Work Breakdown</div>
-                
-                <div className="col-span-1">Nov '26</div>
-                <div className="col-span-1">Dec '26</div>
+                <div className="col-span-1">Sep '25</div>
+                <div className="col-span-1">Oct '25</div>
+                <div className="col-span-1">Nov '25</div>
+                <div className="col-span-1">Dec '25</div>
+                <div className="col-span-1">Jan '26</div>
+                <div className="col-span-1">Feb '26</div>
                 <div className="col-span-2 text-emerald-700">Mar '26 (Launch)</div>
               </div>
 
@@ -243,15 +246,15 @@ export default function SynopsisPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
             <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2">
               <div className="font-bold text-slate-900 flex items-center gap-1.5">
-                {/* <HardDrive className="w-4 h-4 text-blue-700" /> */}
-                {/* <span>Hardware Requirements:</span> */}
+                <HardDrive className="w-4 h-4 text-blue-700" />
+                <span>Hardware Requirements:</span>
               </div>
               <ul className="space-y-1 text-slate-600 text-[11px]">
                 <li>• <strong>Processor:</strong> Dual Core 2.4 GHz or higher (Intel Core i5 / AMD Ryzen / Apple Silicon)</li>
                 <li>• <strong>RAM:</strong> 8 GB minimum (16 GB recommended for local Docker/Node runtime)</li>
                 <li>• <strong>Storage:</strong> 256 GB SSD (50 GB available disk space for media/DB caching)</li>
-                {/* <li>• <strong>Display:</strong> 1366 x 768 or higher display resolution for responsive views</li> */}
-                {/* <li>• <strong>Client Camera:</strong> Integrated HD webcam or smartphone camera for student ID QR handshake</li> */}
+                <li>• <strong>Display:</strong> 1366 x 768 or higher display resolution for responsive views</li>
+                <li>• <strong>Client Camera:</strong> Integrated HD webcam or smartphone camera for student ID QR handshake</li>
               </ul>
             </div>
 
@@ -279,9 +282,9 @@ export default function SynopsisPage() {
           </div>
 
           <div className="space-y-2 text-right">
-            {/* <div className="w-56 border-b border-slate-400 pb-1">
+            <div className="w-56 border-b border-slate-400 pb-1">
               <span className="text-[10px] text-slate-400 italic">Signature of Project Supervisor</span>
-            </div> */}
+            </div>
             <div className="font-bold text-slate-900">Dr. XYZ / Assistant Professor</div>
             <div className="text-[10px] text-slate-500">Department of Computer Science & Engineering</div>
           </div>
