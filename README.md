@@ -131,6 +131,7 @@ Campus Exchange follows a modular full-stack architecture:
 7.  **Real-Time Layer:** Socket.IO can support live communication and
     updates between users.
 
+
 ``` text
                  ┌──────────────────────────┐
                  │       React + Vite       │
@@ -156,6 +157,7 @@ Campus Exchange follows a modular full-stack architecture:
 ```
 
 ------------------------------------------------------------------------
+
 
 ## Getting Started
 
