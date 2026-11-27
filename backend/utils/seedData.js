@@ -1,5 +1,5 @@
 /**
- * CampusXchange UC Berkeley Seed Data
+ * CampusZon UC Berkeley Seed Data
  * Contains full seed datasets matching the frontend's mockData.js
  */
 

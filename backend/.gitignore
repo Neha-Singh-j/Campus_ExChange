@@ -1,6 +1,4 @@
 node_modules
-
-package-lock.json
-
-pckage.json
 .env
+uploads/*
+!uploads/.gitkeep

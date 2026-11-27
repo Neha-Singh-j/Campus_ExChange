@@ -1,214 +1,88 @@
+const mongoose = require('mongoose');
 const Wishlist = require('../models/Wishlist');
 const Watchlist = require('../models/Watchlist');
-const { getIsConnected } = require('../config/db');
-const memoryStore = require('../utils/memoryStore');
+const Listing = require('../models/Listing');
+const AppError = require('../utils/AppError');
+const { SELLER_FIELDS, serializeListing } = require('../utils/serializers');
 
-// GET /api/wishlist
-exports.getWishlist = async (req, res, next) => {
-  try {
-    if (getIsConnected()) {
-      const items = await Wishlist.find({ userId: 'me' }).sort({ createdAt: -1 });
-      return res.status(200).json({
-        success: true,
-        count: items.length,
-        potentialSavings: 35,
-        data: items
-      });
-    }
+const isId = (id) => mongoose.Types.ObjectId.isValid(id);
+const bad = (message) => new AppError(400, message, 'VALIDATION');
 
-    res.status(200).json({
-      success: true,
-      count: memoryStore.wishlist.length,
-      potentialSavings: 35,
-      data: memoryStore.wishlist
-    });
-  } catch (error) {
-    next(error);
-  }
+// GET /api/wishlist  -> the signed-in user's saved listings (newest first)
+exports.getWishlist = async (req, res) => {
+  const rows = await Wishlist.find({ user: req.user._id })
+    .sort({ createdAt: -1 })
+    .populate({ path: 'listing', populate: { path: 'sellerId', select: SELLER_FIELDS } })
+    .lean();
+
+  const wishIds = new Set(rows.filter((r) => r.listing).map((r) => r.listing._id.toString()));
+  const data = rows
+    .filter((r) => r.listing) // listing may have been deleted
+    .map((r) => serializeListing(r.listing, { viewer: req.user, wishIds }));
+  res.json({ success: true, count: data.length, data });
 };
 
-// POST /api/wishlist
-exports.addToWishlist = async (req, res, next) => {
-  try {
-    const { title, price, seller, initials, avCls, hub, label, condition, desc } = req.body;
+// POST /api/wishlist   body: { listingId }
+exports.addToWishlist = async (req, res) => {
+  const { listingId } = req.body;
+  if (!isId(listingId)) throw bad('Please choose an item to save.');
+  const exists = await Listing.exists({ _id: listingId });
+  if (!exists) throw new AppError(404, 'Listing not found.', 'NOT_FOUND');
 
-    if (!title || price === undefined) {
-      return res.status(400).json({
-        success: false,
-        message: 'Please provide title and price to add to wishlist'
-      });
-    }
-
-    const itemData = {
-      userId: 'me',
-      title,
-      price: Number(price),
-      seller: seller || 'Cal Student',
-      initials: initials || 'CS',
-      avCls: avCls || 'avatar-ml',
-      drop: 'Price Alert Active',
-      dropCls: 'price-drop-green',
-      hub: hub || 'Campus Hub',
-      label: label || 'SAVED ITEM',
-      condition: condition || 'Good',
-      desc: desc || '',
-      grad: 'linear-gradient(135deg,#c8a060,#8a6030)',
-      btn1: 'Buy / Hold Escrow',
-      btn1Cls: 'btn-success',
-      btn2: `Message ${seller ? seller.split(' ')[0] : 'Seller'}`
-    };
-
-    if (getIsConnected()) {
-      const item = await Wishlist.create(itemData);
-      return res.status(201).json({
-        success: true,
-        message: 'Item added to campus wishlist',
-        data: item
-      });
-    }
-
-    const mockItem = {
-      _id: `wish_${Date.now()}`,
-      id: `w_${Date.now()}`,
-      ...itemData,
-      createdAt: new Date().toISOString()
-    };
-    memoryStore.wishlist.unshift(mockItem);
-
-    res.status(201).json({
-      success: true,
-      message: 'Item added to campus wishlist (in-memory)',
-      data: mockItem
-    });
-  } catch (error) {
-    next(error);
-  }
+  await Wishlist.updateOne(
+    { user: req.user._id, listing: listingId },
+    { $setOnInsert: { user: req.user._id, listing: listingId } },
+    { upsert: true }
+  );
+  res.status(201).json({ success: true, message: 'Saved to your wishlist.' });
 };
 
-// DELETE /api/wishlist/:id
-exports.removeFromWishlist = async (req, res, next) => {
-  try {
-    const { id } = req.params;
-
-    if (getIsConnected()) {
-      await Wishlist.findOneAndDelete({ $or: [{ _id: id }, { id: id }] });
-      return res.status(200).json({ success: true, message: 'Item removed from wishlist' });
-    }
-
-    const idx = memoryStore.wishlist.findIndex(item => item._id === id || item.id === id);
-    if (idx !== -1) {
-      memoryStore.wishlist.splice(idx, 1);
-    }
-
-    res.status(200).json({ success: true, message: 'Item removed from wishlist' });
-  } catch (error) {
-    next(error);
-  }
+// DELETE /api/wishlist/:listingId
+exports.removeFromWishlist = async (req, res) => {
+  if (!isId(req.params.listingId)) throw bad('Invalid item.');
+  await Wishlist.deleteOne({ user: req.user._id, listing: req.params.listingId });
+  res.json({ success: true, message: 'Removed from your wishlist.' });
 };
+
+// ---------------- course watchlists (per user) ----------------
 
 // GET /api/wishlist/watchlists
-exports.getWatchlists = async (req, res, next) => {
-  try {
-    if (getIsConnected()) {
-      const lists = await Watchlist.find({ userId: 'me' });
-      return res.status(200).json({ success: true, count: lists.length, data: lists });
-    }
-
-    res.status(200).json({
-      success: true,
-      count: memoryStore.watchlists.length,
-      data: memoryStore.watchlists
-    });
-  } catch (error) {
-    next(error);
-  }
+exports.getWatchlists = async (req, res) => {
+  const lists = await Watchlist.find({ user: req.user._id }).sort({ createdAt: -1 }).lean();
+  res.json({ success: true, count: lists.length, data: lists.map((w) => ({ ...w, id: w._id.toString() })) });
 };
 
 // POST /api/wishlist/watchlists
-exports.createWatchlist = async (req, res, next) => {
-  try {
-    const { course, title, maxPrice } = req.body;
-
-    if (!course || !title || !maxPrice) {
-      return res.status(400).json({
-        success: false,
-        message: 'Please provide course code, course title, and target max price'
-      });
-    }
-
-    const watchData = {
-      userId: 'me',
-      course,
-      title,
-      maxPrice: Number(maxPrice),
-      autoNotify: true,
-      status: 'Monitoring',
-      notifications: ['Auto-tracking started', 'Watching Berkeley student drops']
-    };
-
-    if (getIsConnected()) {
-      const created = await Watchlist.create(watchData);
-      return res.status(201).json({ success: true, data: created });
-    }
-
-    const mockItem = {
-      _id: `wtch_${Date.now()}`,
-      id: `cw_${Date.now()}`,
-      ...watchData,
-      createdAt: new Date().toISOString()
-    };
-    memoryStore.watchlists.push(mockItem);
-
-    res.status(201).json({ success: true, data: mockItem });
-  } catch (error) {
-    next(error);
+exports.createWatchlist = async (req, res) => {
+  const course = String(req.body.course || '').trim().slice(0, 40);
+  const title = String(req.body.title || '').trim().slice(0, 120);
+  const maxPrice = Number(req.body.maxPrice);
+  if (!course || !title || !Number.isFinite(maxPrice) || maxPrice < 0) {
+    throw bad('Please provide a course code, a title and a maximum price.');
   }
+  const created = await Watchlist.create({
+    user: req.user._id,
+    course,
+    title,
+    maxPrice,
+    notifications: ['Auto-tracking started'],
+  });
+  res.status(201).json({ success: true, data: { ...created.toObject(), id: created._id.toString() } });
 };
 
 // PATCH /api/wishlist/watchlists/:id/toggle-notify
-exports.toggleAutoNotify = async (req, res, next) => {
-  try {
-    const { id } = req.params;
-
-    if (getIsConnected()) {
-      const watch = await Watchlist.findById(id);
-      if (!watch) {
-        return res.status(404).json({ success: false, message: 'Watchlist not found' });
-      }
-      watch.autoNotify = !watch.autoNotify;
-      await watch.save();
-      return res.status(200).json({ success: true, autoNotify: watch.autoNotify });
-    }
-
-    const watch = memoryStore.watchlists.find(w => w._id === id || w.id === id);
-    if (!watch) {
-      return res.status(404).json({ success: false, message: 'Watchlist not found' });
-    }
-    watch.autoNotify = !watch.autoNotify;
-
-    res.status(200).json({ success: true, autoNotify: watch.autoNotify });
-  } catch (error) {
-    next(error);
-  }
+exports.toggleAutoNotify = async (req, res) => {
+  if (!isId(req.params.id)) throw new AppError(404, 'Watchlist not found.', 'NOT_FOUND');
+  const watch = await Watchlist.findOne({ _id: req.params.id, user: req.user._id });
+  if (!watch) throw new AppError(404, 'Watchlist not found.', 'NOT_FOUND');
+  watch.autoNotify = !watch.autoNotify;
+  await watch.save();
+  res.json({ success: true, autoNotify: watch.autoNotify });
 };
 
 // DELETE /api/wishlist/watchlists/:id
-exports.deleteWatchlist = async (req, res, next) => {
-  try {
-    const { id } = req.params;
-
-    if (getIsConnected()) {
-      await Watchlist.findByIdAndDelete(id);
-      return res.status(200).json({ success: true, message: 'Watchlist alert removed' });
-    }
-
-    const idx = memoryStore.watchlists.findIndex(w => w._id === id || w.id === id);
-    if (idx !== -1) {
-      memoryStore.watchlists.splice(idx, 1);
-    }
-
-    res.status(200).json({ success: true, message: 'Watchlist alert removed' });
-  } catch (error) {
-    next(error);
-  }
+exports.deleteWatchlist = async (req, res) => {
+  if (!isId(req.params.id)) throw new AppError(404, 'Watchlist not found.', 'NOT_FOUND');
+  await Watchlist.deleteOne({ _id: req.params.id, user: req.user._id });
+  res.json({ success: true, message: 'Watchlist removed.' });
 };

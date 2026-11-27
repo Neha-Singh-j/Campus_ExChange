@@ -1,209 +1,134 @@
 /**
- * CampusZon API Client
- * Connects frontend views and components to the MVC Express REST API backend.
+ * Campus Exchange API client. Every call goes to the Express backend; the JWT
+ * (saved in localStorage after login) is attached automatically.
  */
-
 const API_BASE = import.meta.env?.VITE_API_BASE_URL || 'http://localhost:5000/api';
+const TOKEN_KEY = 'campusexchange.token';
 
-const handleResponse = async (response) => {
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.message || `API error: ${response.status} ${response.statusText}`);
+export const tokenStore = {
+  get() {
+    try {
+      return localStorage.getItem(TOKEN_KEY);
+    } catch {
+      return null;
+    }
+  },
+  set(token) {
+    try {
+      localStorage.setItem(TOKEN_KEY, token);
+    } catch {
+      /* storage unavailable - user stays logged in for this tab only */
+    }
+  },
+  clear() {
+    try {
+      localStorage.removeItem(TOKEN_KEY);
+    } catch {
+      /* ignore */
+    }
+  },
+};
+
+let onSessionExpired = null;
+/** AuthContext registers a callback so an expired token logs the user out everywhere. */
+export const setSessionExpiredHandler = (fn) => {
+  onSessionExpired = fn;
+};
+
+export class ApiError extends Error {
+  constructor(message, { status = 0, code, data } = {}) {
+    super(message);
+    this.name = 'ApiError';
+    this.status = status;
+    this.code = code;
+    this.data = data;
   }
-  return response.json();
+}
+
+const query = (params = {}) => {
+  const q = new URLSearchParams(
+    Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== '')
+  ).toString();
+  return q ? `?${q}` : '';
+};
+
+const request = async (path, { method = 'GET', json, form } = {}) => {
+  const headers = {};
+  const token = tokenStore.get();
+  if (token) headers.Authorization = `Bearer ${token}`;
+  if (json !== undefined) headers['Content-Type'] = 'application/json';
+
+  let res;
+  try {
+    res = await fetch(`${API_BASE}${path}`, {
+      method,
+      headers,
+      body: json !== undefined ? JSON.stringify(json) : form,
+    });
+  } catch {
+    throw new ApiError('Cannot reach the server. Check your connection and that the backend is running.', {
+      code: 'NETWORK',
+    });
+  }
+
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    if (res.status === 401 && token && data.code === 'AUTH_INVALID') onSessionExpired?.();
+    throw new ApiError(data.message || `Request failed (${res.status})`, {
+      status: res.status,
+      code: data.code,
+      data,
+    });
+  }
+  return data;
 };
 
 export const api = {
-  // ---- Listings ----
-  getListings: async (params = {}) => {
-    const query = new URLSearchParams(params).toString();
-    const res = await fetch(`${API_BASE}/listings${query ? `?${query}` : ''}`);
-    return handleResponse(res);
-  },
+  // ---- Auth ----
+  register: (payload) => request('/auth/register', { method: 'POST', json: payload }),
+  login: (email, password) => request('/auth/login', { method: 'POST', json: { email, password } }),
+  me: () => request('/auth/me'),
+  updateMe: (payload) => request('/auth/me', { method: 'PATCH', json: payload }),
 
-  getListingById: async (id) => {
-    const res = await fetch(`${API_BASE}/listings/${id}`);
-    return handleResponse(res);
-  },
+  // ---- Listings (create/update take a FormData so photos can be uploaded) ----
+  getListings: (params) => request(`/listings${query(params)}`),
+  getMyListings: () => request('/listings/mine'),
+  getListingStats: (params) => request(`/listings/stats/summary${query(params)}`),
+  createListing: (formData) => request('/listings', { method: 'POST', form: formData }),
+  updateListing: (id, formData) => request(`/listings/${id}`, { method: 'PATCH', form: formData }),
+  setListingStatus: (id, status) => request(`/listings/${id}/status`, { method: 'PATCH', json: { status } }),
+  deleteListing: (id) => request(`/listings/${id}`, { method: 'DELETE' }),
 
-  createListing: async (listingData) => {
-    const res = await fetch(`${API_BASE}/listings`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(listingData),
-    });
-    return handleResponse(res);
-  },
+  // ---- Wishlist + course watchlists ----
+  getWishlist: () => request('/wishlist'),
+  addToWishlist: (listingId) => request('/wishlist', { method: 'POST', json: { listingId } }),
+  removeFromWishlist: (listingId) => request(`/wishlist/${listingId}`, { method: 'DELETE' }),
+  getWatchlists: () => request('/wishlist/watchlists'),
+  createWatchlist: (payload) => request('/wishlist/watchlists', { method: 'POST', json: payload }),
+  toggleWatchlistNotify: (id) => request(`/wishlist/watchlists/${id}/toggle-notify`, { method: 'PATCH' }),
+  deleteWatchlist: (id) => request(`/wishlist/watchlists/${id}`, { method: 'DELETE' }),
 
-  toggleWishlist: async (id, isWishlisted) => {
-    const res = await fetch(`${API_BASE}/listings/${id}/wishlist`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ isWishlisted }),
-    });
-    return handleResponse(res);
-  },
+  // ---- Offers & negotiation on listings ----
+  getOffers: () => request('/offers'),
+  createOffer: (listingId, amount, message) =>
+    request('/offers', { method: 'POST', json: { listingId, amount, message } }),
+  respondToOffer: (id, action, payload = {}) =>
+    request(`/offers/${id}/respond`, { method: 'POST', json: { action, ...payload } }),
+  withdrawOffer: (id) => request(`/offers/${id}/withdraw`, { method: 'POST' }),
+  cancelDeal: (id) => request(`/offers/${id}/cancel`, { method: 'POST', json: {} }),
+  completeDeal: (id) => request(`/offers/${id}/complete`, { method: 'POST' }),
 
-  toggleLikeListing: async (id) => {
-    const res = await fetch(`${API_BASE}/listings/${id}/like`, {
-      method: 'PATCH',
-    });
-    return handleResponse(res);
-  },
+  // ---- Wanted board ----
+  getWanted: (params) => request(`/wanted${query(params)}`),
+  createWanted: (payload) => request('/wanted', { method: 'POST', json: payload }),
+  submitWantedOffer: (id, payload) => request(`/wanted/${id}/offer`, { method: 'POST', json: payload }),
+  getWantedOffers: (id) => request(`/wanted/${id}/offers`),
+  setWantedStatus: (id, status) => request(`/wanted/${id}/status`, { method: 'PATCH', json: { status } }),
+  deleteWanted: (id) => request(`/wanted/${id}`, { method: 'DELETE' }),
 
-  deleteListing: async (id) => {
-    const res = await fetch(`${API_BASE}/listings/${id}`, {
-      method: 'DELETE',
-    });
-    return handleResponse(res);
-  },
-
-  getMarketplaceStats: async () => {
-    const res = await fetch(`${API_BASE}/listings/stats/summary`);
-    return handleResponse(res);
-  },
-
-  // ---- Bundles ----
-  getBundles: async (params = {}) => {
-    const query = new URLSearchParams(params).toString();
-    const res = await fetch(`${API_BASE}/bundles${query ? `?${query}` : ''}`);
-    return handleResponse(res);
-  },
-
-  claimBundle: async (id) => {
-    const res = await fetch(`${API_BASE}/bundles/${id}/claim`, {
-      method: 'POST',
-    });
-    return handleResponse(res);
-  },
-
-  createBundle: async (bundleData) => {
-    const res = await fetch(`${API_BASE}/bundles`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(bundleData),
-    });
-    return handleResponse(res);
-  },
-
-  getBundleStats: async () => {
-    const res = await fetch(`${API_BASE}/bundles/stats/overview`);
-    return handleResponse(res);
-  },
-
-  // ---- Wanted Board ----
-  getWanted: async (params = {}) => {
-    const query = new URLSearchParams(params).toString();
-    const res = await fetch(`${API_BASE}/wanted${query ? `?${query}` : ''}`);
-    return handleResponse(res);
-  },
-
-  createWanted: async (wantedData) => {
-    const res = await fetch(`${API_BASE}/wanted`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(wantedData),
-    });
-    return handleResponse(res);
-  },
-
-  submitOffer: async (id, offerData) => {
-    const res = await fetch(`${API_BASE}/wanted/${id}/offer`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(offerData),
-    });
-    return handleResponse(res);
-  },
-
-  // ---- Advanced Catalog Search ----
-  searchCatalog: async (params = {}) => {
-    const query = new URLSearchParams(params).toString();
-    const res = await fetch(`${API_BASE}/search${query ? `?${query}` : ''}`);
-    return handleResponse(res);
-  },
-
-  // ---- Wishlist & Watchlists ----
-  getWishlist: async () => {
-    const res = await fetch(`${API_BASE}/wishlist`);
-    return handleResponse(res);
-  },
-
-  addToWishlist: async (itemData) => {
-    const res = await fetch(`${API_BASE}/wishlist`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(itemData),
-    });
-    return handleResponse(res);
-  },
-
-  removeFromWishlist: async (id) => {
-    const res = await fetch(`${API_BASE}/wishlist/${id}`, {
-      method: 'DELETE',
-    });
-    return handleResponse(res);
-  },
-
-  getWatchlists: async () => {
-    const res = await fetch(`${API_BASE}/wishlist/watchlists`);
-    return handleResponse(res);
-  },
-
-  createWatchlist: async (watchlistData) => {
-    const res = await fetch(`${API_BASE}/wishlist/watchlists`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(watchlistData),
-    });
-    return handleResponse(res);
-  },
-
-  toggleWatchlistNotify: async (id) => {
-    const res = await fetch(`${API_BASE}/wishlist/watchlists/${id}/toggle-notify`, {
-      method: 'PATCH',
-    });
-    return handleResponse(res);
-  },
-
-  deleteWatchlist: async (id) => {
-    const res = await fetch(`${API_BASE}/wishlist/watchlists/${id}`, {
-      method: 'DELETE',
-    });
-    return handleResponse(res);
-  },
-
-  // ---- Student Verification ----
-  getVerificationProfile: async () => {
-    const res = await fetch(`${API_BASE}/verify/profile`);
-    return handleResponse(res);
-  },
-
-  submitVerification: async (verificationData) => {
-    const res = await fetch(`${API_BASE}/verify/request`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(verificationData),
-    });
-    return handleResponse(res);
-  },
-
-  // ---- Meetup Hubs & Safety ----
-  getHubs: async () => {
-    const res = await fetch(`${API_BASE}/hubs`);
-    return handleResponse(res);
-  },
-
-  getSafetyPledge: async () => {
-    const res = await fetch(`${API_BASE}/hubs/safety-pledge`);
-    return handleResponse(res);
-  },
-
-  // ---- Health Check ----
-  checkHealth: async () => {
-    const res = await fetch(`${API_BASE}/health`);
-    return handleResponse(res);
-  },
+  // ---- Move-out bundles ----
+  getBundles: (params) => request(`/bundles${query(params)}`),
+  claimBundle: (id) => request(`/bundles/${id}/claim`, { method: 'POST' }),
 };
 
 export default api;

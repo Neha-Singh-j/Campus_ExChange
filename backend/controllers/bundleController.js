@@ -1,7 +1,6 @@
 const Bundle = require('../models/Bundle');
 const { getIsConnected } = require('../config/db');
 const memoryStore = require('../utils/memoryStore');
-const { recordOrder, findBundle } = require('./orderController');
 
 // GET /api/bundles
 exports.getAllBundles = async (req, res, next) => {
@@ -108,11 +107,10 @@ exports.createBundle = async (req, res, next) => {
       savings,
       items: Array.isArray(items) ? items : [items],
       note: note || 'Complete dorm setup from a graduating senior.',
-      sellerId: req.user.id,
       seller: {
-        name: req.user.name,
-        major: "Cal '25",
-        initials: req.user.name.split(' ').filter(Boolean).map((n) => n[0]).join('').slice(0, 2).toUpperCase() || 'ST',
+        name: 'Senior Cal Grad',
+        major: "EECS '25",
+        initials: 'SG',
         avCls: 'avatar-dk',
         isSenior: true
       },
@@ -149,34 +147,35 @@ exports.createBundle = async (req, res, next) => {
   }
 };
 
-// POST /api/bundles/:id/claim  (login required; records an order at the stored bundle price)
+// POST /api/bundles/:id/claim
 exports.claimBundle = async (req, res, next) => {
   try {
     const { id } = req.params;
 
-    const bundle = await findBundle(id);
+    if (getIsConnected()) {
+      const bundle = await Bundle.findById(id);
+      if (!bundle) {
+        return res.status(404).json({ success: false, message: 'Bundle not found' });
+      }
+      bundle.claimed = true;
+      await bundle.save();
+      return res.status(200).json({
+        success: true,
+        message: 'Bundle claimed successfully! Escrow hold initiated for pickup.',
+        data: bundle
+      });
+    }
 
+    const bundle = memoryStore.bundles.find(b => b._id === id);
     if (!bundle) {
       return res.status(404).json({ success: false, message: 'Bundle not found' });
     }
-    if (bundle.claimed) {
-      return res.status(409).json({ success: false, message: 'This bundle has already been claimed' });
-    }
-    if (bundle.sellerId && String(bundle.sellerId) === req.user.id) {
-      return res.status(400).json({ success: false, message: 'You cannot claim your own bundle' });
-    }
-
-    const order = await recordOrder({ itemType: 'bundle', item: bundle, buyer: req.user });
-
     bundle.claimed = true;
-    bundle.claimedBy = req.user.id;
-    if (typeof bundle.save === 'function') await bundle.save();
 
     res.status(200).json({
       success: true,
       message: 'Bundle claimed successfully! Escrow hold initiated for pickup.',
-      data: bundle,
-      order
+      data: bundle
     });
   } catch (error) {
     next(error);

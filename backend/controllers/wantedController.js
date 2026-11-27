@@ -1,198 +1,130 @@
+const mongoose = require('mongoose');
 const Wanted = require('../models/Wanted');
-const { getIsConnected } = require('../config/db');
-const memoryStore = require('../utils/memoryStore');
+const config = require('../config');
+const AppError = require('../utils/AppError');
+const { notifyQuietly } = require('../utils/mailer');
+const { escapeRegex } = require('../utils/validators');
+const { SELLER_FIELDS, serializeWanted, publicUser } = require('../utils/serializers');
 
-// GET /api/wanted
-exports.getAllWanted = async (req, res, next) => {
-  try {
-    const { category, urgency, zone, search } = req.query;
+const isId = (id) => mongoose.Types.ObjectId.isValid(id);
+const bad = (message) => new AppError(400, message, 'VALIDATION');
+const text = (v, max) => String(v ?? '').trim().slice(0, max);
 
-    if (getIsConnected()) {
-      let query = {};
-      if (category && category !== 'all') {
-        query.category = category;
-      }
-      if (urgency && urgency !== 'all' && urgency !== 'Urgency Timeline') {
-        query.urgency = urgency.toLowerCase().includes('urgent') ? 'urgent' : 'this_week';
-      }
-      if (zone && zone !== 'All Campus Zones' && zone !== 'Campus Zone / Dorm') {
-        query.zone = { $regex: zone, $options: 'i' };
-      }
-      if (search) {
-        query.$or = [
-          { title: { $regex: search, $options: 'i' } },
-          { desc: { $regex: search, $options: 'i' } }
-        ];
-      }
-
-      const items = await Wanted.find(query).sort({ createdAt: -1 });
-      return res.status(200).json({
-        success: true,
-        count: items.length,
-        data: items
-      });
-    }
-
-    let results = [...memoryStore.wanted];
-    if (category && category !== 'all') {
-      results = results.filter(w => w.category === category);
-    }
-    if (urgency && urgency !== 'all' && urgency !== 'Urgency Timeline') {
-      const matchUrgent = urgency.toLowerCase().includes('urgent');
-      results = results.filter(w => (matchUrgent ? w.urgency === 'urgent' : w.urgency !== 'urgent'));
-    }
-    if (zone && zone !== 'All Campus Zones' && zone !== 'Campus Zone / Dorm') {
-      results = results.filter(w => w.zone.toLowerCase().includes(zone.toLowerCase()));
-    }
-    if (search) {
-      const q = search.toLowerCase();
-      results = results.filter(
-        w => w.title.toLowerCase().includes(q) || w.desc.toLowerCase().includes(q)
-      );
-    }
-
-    res.status(200).json({
-      success: true,
-      count: results.length,
-      data: results
-    });
-  } catch (error) {
-    next(error);
+const loadOwned = async (req) => {
+  if (!isId(req.params.id)) throw new AppError(404, 'Request not found.', 'NOT_FOUND');
+  const item = await Wanted.findById(req.params.id);
+  if (!item) throw new AppError(404, 'Request not found.', 'NOT_FOUND');
+  if (!item.user.equals(req.user._id) && req.user.role !== 'admin') {
+    throw new AppError(403, 'You can only change your own requests.', 'FORBIDDEN');
   }
+  return item;
+};
+
+// GET /api/wanted   (public)
+exports.getAllWanted = async (req, res) => {
+  const q = { campusId: req.query.campusId || req.user?.campusId || config.campusId, status: 'open' };
+  if (req.query.category) q.category = String(req.query.category);
+  if (req.query.mine === 'true' && req.user) q.user = req.user._id;
+  if (req.query.search) {
+    const rx = new RegExp(escapeRegex(String(req.query.search).slice(0, 80)), 'i');
+    q.$or = [{ title: rx }, { desc: rx }, { category: rx }];
+  }
+
+  const items = await Wanted.find(q).sort({ createdAt: -1 }).limit(100).populate('user', SELLER_FIELDS).lean();
+  res.json({ success: true, count: items.length, data: items.map((w) => serializeWanted(w, { viewer: req.user })) });
 };
 
 // GET /api/wanted/:id
-exports.getWantedById = async (req, res, next) => {
-  try {
-    const { id } = req.params;
-
-    if (getIsConnected()) {
-      const item = await Wanted.findById(id);
-      if (!item) {
-        return res.status(404).json({ success: false, message: 'Wanted request not found' });
-      }
-      return res.status(200).json({ success: true, data: item });
-    }
-
-    const item = memoryStore.wanted.find(w => w._id === id);
-    if (!item) {
-      return res.status(404).json({ success: false, message: 'Wanted request not found' });
-    }
-
-    res.status(200).json({ success: true, data: item });
-  } catch (error) {
-    next(error);
-  }
+exports.getWanted = async (req, res) => {
+  if (!isId(req.params.id)) throw new AppError(404, 'Request not found.', 'NOT_FOUND');
+  const item = await Wanted.findById(req.params.id).populate('user', SELLER_FIELDS).lean();
+  if (!item) throw new AppError(404, 'Request not found.', 'NOT_FOUND');
+  res.json({ success: true, data: serializeWanted(item, { viewer: req.user }) });
 };
 
 // POST /api/wanted
-exports.createWanted = async (req, res, next) => {
-  try {
-    const { title, desc, budget, zone, urgency, category } = req.body;
+exports.createWanted = async (req, res) => {
+  const b = req.body;
+  const title = text(b.title, 140);
+  const budget = text(b.budget, 40);
+  if (title.length < 3) throw bad('Please describe what you are looking for.');
+  if (!budget) throw bad('Please enter your budget.');
 
-    if (!title || !budget) {
-      return res.status(400).json({
-        success: false,
-        message: 'Please provide both title and offered budget'
-      });
-    }
-
-    const isUrgent = urgency === 'urgent' || urgency === 'Most Urgent';
-    const wantedData = {
-      title,
-      desc: desc || 'Looking to acquire this item on campus from a fellow Cal student.',
-      budget: budget.startsWith('$') ? budget : `$${budget}`,
-      border: isUrgent ? '#ef4444' : '#0f1fa8',
-      userId: req.user.id,
-      initials: req.user.name.split(' ').filter(Boolean).map((n) => n[0]).join('').slice(0, 2).toUpperCase() || 'ST',
-      avCls: 'avatar-ar',
-      name: req.user.name,
-      course: 'Student',
-      timeAgo: 'Just now',
-      tags: [
-        { t: isUrgent ? 'Urgent Need' : 'Campus Need', cls: isUrgent ? 'chip-red' : 'chip-blue' },
-        { t: 'Trade Eligible', cls: 'chip-green' }
-      ],
-      zone: zone || 'Sproul Plaza / MLK Union',
-      activity: 'Be the first to reply',
-      actColor: 'var(--muted)',
-      urgency: isUrgent ? 'urgent' : 'this_week',
-      category: category || 'course',
-      offers: []
-    };
-
-    if (getIsConnected()) {
-      const created = await Wanted.create(wantedData);
-      return res.status(201).json({
-        success: true,
-        message: 'Wanted request published to board',
-        data: created
-      });
-    }
-
-    const mockItem = {
-      _id: `wntd_${Date.now()}`,
-      ...wantedData,
-      createdAt: new Date().toISOString()
-    };
-    memoryStore.wanted.unshift(mockItem);
-
-    res.status(201).json({
-      success: true,
-      message: 'Wanted request published to board (in-memory)',
-      data: mockItem
-    });
-  } catch (error) {
-    next(error);
-  }
+  const created = await Wanted.create({
+    user: req.user._id,
+    campusId: req.user.campusId,
+    title,
+    budget,
+    desc: text(b.description ?? b.desc, 1500),
+    zone: text(b.campus ?? b.zone, 120) || 'Main Campus',
+    urgency: text(b.urgency, 60) || 'Flexible',
+    category: text(b.category, 60) || 'Textbooks & Notes',
+  });
+  await created.populate('user', SELLER_FIELDS);
+  res.status(201).json({
+    success: true,
+    message: 'Your request is live on the board.',
+    data: serializeWanted(created.toObject(), { viewer: req.user }),
+  });
 };
 
-// POST /api/wanted/:id/offer
-exports.submitOffer = async (req, res, next) => {
-  try {
-    const { id } = req.params;
-    const { amount, message } = req.body;
-
-    const offer = {
-      offeredById: req.user.id,
-      offeredBy: req.user.name,
-      amount: Number(amount) || 0,
-      message: message || 'I have this item available for meetup on campus!',
-      createdAt: new Date()
-    };
-
-    if (getIsConnected()) {
-      const item = await Wanted.findById(id);
-      if (!item) {
-        return res.status(404).json({ success: false, message: 'Wanted request not found' });
-      }
-      item.offers.push(offer);
-      item.activity = `● ${item.offers.length} offer${item.offers.length > 1 ? 's' : ''} received`;
-      item.actColor = '#22c55e';
-      await item.save();
-
-      return res.status(200).json({
-        success: true,
-        message: 'Your offer has been submitted securely to the student.',
-        data: item
-      });
-    }
-
-    const item = memoryStore.wanted.find(w => w._id === id);
-    if (!item) {
-      return res.status(404).json({ success: false, message: 'Wanted request not found' });
-    }
-    if (!item.offers) item.offers = [];
-    item.offers.push(offer);
-    item.activity = `● ${item.offers.length} offer${item.offers.length > 1 ? 's' : ''} received`;
-    item.actColor = '#22c55e';
-
-    res.status(200).json({
-      success: true,
-      message: 'Your offer has been submitted securely to the student.',
-      data: item
-    });
-  } catch (error) {
-    next(error);
+// POST /api/wanted/:id/offer   body: { amount?, message }
+exports.submitOffer = async (req, res) => {
+  if (!isId(req.params.id)) throw new AppError(404, 'Request not found.', 'NOT_FOUND');
+  const item = await Wanted.findById(req.params.id).populate('user', 'name email campusId');
+  if (!item || item.status !== 'open') throw new AppError(404, 'This request is no longer open.', 'NOT_FOUND');
+  if (item.user._id.equals(req.user._id)) throw bad('You cannot offer on your own request.');
+  if (item.campusId !== req.user.campusId) throw new AppError(403, 'This request is on a different campus.', 'FORBIDDEN');
+  if (item.offers.some((o) => o.user.equals(req.user._id))) {
+    throw new AppError(409, 'You already sent an offer for this request.', 'OFFER_EXISTS');
   }
+
+  const message = text(req.body.message, 500);
+  if (!message) throw bad('Please add a short message for the student.');
+  const amount = req.body.amount === undefined || req.body.amount === '' ? undefined : Number(req.body.amount);
+  if (amount !== undefined && (!Number.isFinite(amount) || amount < 0 || amount > 1000000)) {
+    throw bad('Please enter a valid amount.');
+  }
+
+  item.offers.push({ user: req.user._id, amount, message });
+  await item.save();
+
+  notifyQuietly(
+    item.user.email,
+    `New offer for "${item.title}"`,
+    `Hi ${item.user.name},\n\n${req.user.name} sent an offer${amount !== undefined ? ` of ${amount}` : ''} for your request "${item.title}".\n\nMessage: ${message}\n\nOpen Campus Exchange to see all offers.\n`
+  );
+  res.status(201).json({ success: true, message: 'Your offer was sent to the student.' });
+};
+
+// GET /api/wanted/:id/offers   (request owner only)
+exports.getOffers = async (req, res) => {
+  const item = await loadOwned(req);
+  await item.populate('offers.user', SELLER_FIELDS);
+  res.json({
+    success: true,
+    data: item.offers.map((o) => ({
+      id: o._id.toString(),
+      from: publicUser(o.user),
+      amount: o.amount ?? null,
+      message: o.message,
+      createdAt: o.createdAt,
+    })),
+  });
+};
+
+// PATCH /api/wanted/:id/status   body: { status: 'fulfilled' | 'closed' }
+exports.setStatus = async (req, res) => {
+  const item = await loadOwned(req);
+  if (!['fulfilled', 'closed'].includes(req.body.status)) throw bad('Status must be fulfilled or closed.');
+  item.status = req.body.status;
+  await item.save();
+  res.json({ success: true, message: 'Request updated.' });
+};
+
+// DELETE /api/wanted/:id
+exports.deleteWanted = async (req, res) => {
+  const item = await loadOwned(req);
+  await item.deleteOne();
+  res.json({ success: true, message: 'Request deleted.' });
 };

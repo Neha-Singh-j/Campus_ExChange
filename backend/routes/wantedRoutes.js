@@ -1,17 +1,18 @@
 const express = require('express');
 const router = express.Router();
-const wantedController = require('../controllers/wantedController');
-const { authenticate } = require('../middleware/auth');
+const c = require('../controllers/wantedController');
+const { protect, optionalAuth, requireVerified } = require('../middleware/auth');
 
-// Browsing is public; posting a request or an offer requires login
 router.route('/')
-  .get(wantedController.getAllWanted)
-  .post(authenticate, wantedController.createWanted);
+  .get(optionalAuth, c.getAllWanted)
+  .post(protect, requireVerified, c.createWanted);
 
 router.route('/:id')
-  .get(wantedController.getWantedById);
+  .get(optionalAuth, c.getWanted)
+  .delete(protect, c.deleteWanted);
 
-// Submit offer to wanted student
-router.post('/:id/offer', authenticate, wantedController.submitOffer);
+router.post('/:id/offer', protect, requireVerified, c.submitOffer);
+router.get('/:id/offers', protect, c.getOffers);
+router.patch('/:id/status', protect, c.setStatus);
 
 module.exports = router;

@@ -1,86 +1,96 @@
-const { hashPassword, verifyPassword, signToken } = require('../utils/auth');
-const { findUserByEmail, createUser, touchLastLogin, publicUser, rollNoTaken } = require('../utils/dataStore');
-const { parseStudentProfile } = require('../utils/studentProfile');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const User = require('../models/User');
+const config = require('../config');
+const AppError = require('../utils/AppError');
+const { normalizeEmail, isValidEmail, isCampusEmail, passwordProblem } = require('../utils/validators');
 
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const BCRYPT_ROUNDS = 12;
+// Compared against when the email is unknown so login takes the same time either way.
+const DUMMY_HASH = bcrypt.hashSync('not-a-real-password', BCRYPT_ROUNDS);
 
-const issueSession = (user) => ({
-  token: signToken({ sub: String(user._id), role: user.role }),
-  user: publicUser(user)
-});
+const signToken = (user) =>
+  jwt.sign({ sub: user._id.toString() }, config.jwt.secret, {
+    algorithm: 'HS256',
+    expiresIn: config.jwt.expiresIn,
+  });
 
-// POST /api/auth/signup  (always creates a "student"; role cannot be chosen by the client)
-// The login email is the student's university email. Roll number, college and an ID photo are required.
-exports.signup = async (req, res, next) => {
-  try {
-    const { name, email, password, campusId } = req.body || {};
+const cleanText = (v, max) => String(v || '').trim().slice(0, max);
 
-    if (!name || !String(name).trim() || !email || !password) {
-      return res.status(400).json({ success: false, message: 'Name, email and password are required' });
-    }
-    const cleanEmail = String(email).trim().toLowerCase();
-    if (!EMAIL_RE.test(cleanEmail)) {
-      return res.status(400).json({ success: false, message: 'Please enter a valid email address' });
-    }
-    if (process.env.REQUIRE_EDU_EMAIL === 'true' && !cleanEmail.endsWith('.edu')) {
-      return res.status(400).json({ success: false, message: 'Signup requires a university .edu email address' });
-    }
-    if (String(password).length < 8) {
-      return res.status(400).json({ success: false, message: 'Password must be at least 8 characters' });
-    }
-    if (await findUserByEmail(cleanEmail)) {
-      return res.status(409).json({ success: false, message: 'An account with this email already exists' });
-    }
+// POST /api/auth/register
+exports.register = async (req, res) => {
+  const name = cleanText(req.body.name, 80);
+  const email = normalizeEmail(req.body.email);
+  const password = String(req.body.password || '');
 
-    // Student details (the login email doubles as the university email)
-    const parsed = parseStudentProfile({ ...req.body, universityEmail: cleanEmail }, { requireIdProof: true });
-    if (parsed.error) {
-      return res.status(400).json({ success: false, message: parsed.error });
-    }
-    if (await rollNoTaken(parsed.profile.universityName, parsed.profile.rollNo)) {
-      return res
-        .status(409)
-        .json({ success: false, message: 'That roll number is already registered at this university' });
-    }
-
-    const user = await createUser({
-      name: String(name).trim().slice(0, 80),
-      email: cleanEmail,
-      passwordHash: hashPassword(password),
-      role: 'student',
-      campusId: campusId || 'berkeley',
-      studentProfile: parsed.profile,
-      idProofImage: parsed.idProofImage
-    });
-
-    res.status(201).json({ success: true, message: 'Account created', data: issueSession(user) });
-  } catch (error) {
-    next(error);
+  if (name.length < 2) throw new AppError(400, 'Please enter your full name.', 'VALIDATION');
+  if (!isValidEmail(email)) throw new AppError(400, 'Please enter a valid email address.', 'VALIDATION');
+  if (!isCampusEmail(email)) {
+    throw new AppError(
+      400,
+      `Please use your campus email (${config.allowedEmailDomains.map((d) => `@${d}`).join(' or ')}).`,
+      'EMAIL_DOMAIN'
+    );
   }
+  const pwProblem = passwordProblem(password);
+  if (pwProblem) throw new AppError(400, pwProblem, 'WEAK_PASSWORD');
+
+  if (await User.exists({ email })) {
+    throw new AppError(409, 'An account with this email already exists. Please log in.', 'EMAIL_EXISTS');
+  }
+
+  const user = await User.create({
+    name,
+    email,
+    passwordHash: await bcrypt.hash(password, BCRYPT_ROUNDS),
+    department: cleanText(req.body.department, 80),
+    year: cleanText(req.body.year, 40),
+    campusId: config.campusId,
+    isVerified: true,
+    verifiedAt: new Date(),
+    lastLoginAt: new Date(),
+  });
+
+  res.status(201).json({ success: true, token: signToken(user), user: user.toPrivate() });
 };
 
-// POST /api/auth/login  (used by both students and the admin)
-exports.login = async (req, res, next) => {
-  try {
-    const { email, password } = req.body || {};
-    if (!email || !password) {
-      return res.status(400).json({ success: false, message: 'Email and password are required' });
-    }
+// POST /api/auth/login
+exports.login = async (req, res) => {
+  const email = normalizeEmail(req.body.email);
+  const password = String(req.body.password || '');
 
-    const user = await findUserByEmail(email);
-    // Same message for unknown email and wrong password, so accounts can't be probed
-    if (!user || user.isActive === false || !verifyPassword(password, user.passwordHash)) {
-      return res.status(401).json({ success: false, message: 'Invalid email or password' });
-    }
-
-    await touchLastLogin(user._id);
-    res.status(200).json({ success: true, message: 'Logged in', data: issueSession(user) });
-  } catch (error) {
-    next(error);
+  const user = await User.findOne({ email }).select('+passwordHash');
+  const passwordOk = await bcrypt.compare(password, user ? user.passwordHash : DUMMY_HASH);
+  if (!user || !passwordOk) {
+    throw new AppError(401, 'Incorrect email or password.', 'BAD_CREDENTIALS');
   }
+
+  // Accounts left over from the old email-code sign-up become normal accounts on first login.
+  if (!user.isVerified) {
+    user.isVerified = true;
+    user.verifiedAt = new Date();
+  }
+
+  user.lastLoginAt = new Date();
+  await user.save();
+  res.json({ success: true, token: signToken(user), user: user.toPrivate() });
 };
 
 // GET /api/auth/me
-exports.me = (req, res) => {
-  res.status(200).json({ success: true, data: req.user });
+exports.me = async (req, res) => {
+  res.json({ success: true, user: req.user.toPrivate() });
+};
+
+// PATCH /api/auth/me
+exports.updateMe = async (req, res) => {
+  const { name, department, year } = req.body;
+  if (name !== undefined) {
+    const n = cleanText(name, 80);
+    if (n.length < 2) throw new AppError(400, 'Please enter your full name.', 'VALIDATION');
+    req.user.name = n;
+  }
+  if (department !== undefined) req.user.department = cleanText(department, 80);
+  if (year !== undefined) req.user.year = cleanText(year, 40);
+  await req.user.save();
+  res.json({ success: true, user: req.user.toPrivate() });
 };

@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useCampus } from '../context/useCampus';
+import { formatMoney, initialsOf } from '../utils/format';
 
 const CATS = [
-  { id: 'all', label: 'All Items (3,420)' },
+  { id: 'all', label: 'All Items' },
   { id: 'textbooks', label: 'Textbooks & Courseware' },
   { id: 'dorm', label: 'Dorm & Furniture' },
   { id: 'electronics', label: 'Electronics & Calculators' },
@@ -68,17 +69,13 @@ function useCountUp(target, duration = 1200) {
   return value;
 }
 
-function ListingCard({ item, index, onToggleWishlist, onOpenChat }) {
+function ListingCard({ item, index, currency, onToggleWishlist, onMakeOffer }) {
   const cat = CAT_OF[item.category] ?? 'other';
-  const sellerName = item.seller?.name ?? 'You';
-  const [cls, hub] = (item.seller?.role ?? 'Student • On campus').split(' • ');
-  const initials = sellerName
-    .split(' ')
-    .map((w) => w[0])
-    .join('')
-    .slice(0, 2)
-    .toUpperCase();
+  const sellerName = item.seller?.name ?? 'Student';
+  const [cls, hub] = (item.seller?.role ?? 'Student').split(' • ');
+  const initials = initialsOf(sellerName);
   const avatarCls = AVATARS[[...sellerName].reduce((n, ch) => n + ch.charCodeAt(0), 0) % AVATARS.length];
+  const unavailable = item.status !== 'available';
   const sub = cat === 'textbooks' ? item.courseCode : item.condition;
   const grad = GRAD_OF[cat] ?? 'linear-gradient(135deg,#d4c5a9,#a89070)';
 
@@ -96,7 +93,7 @@ function ListingCard({ item, index, onToggleWishlist, onOpenChat }) {
             }}
           />
         )}
-        <span className={`badge-top ${BADGE_CLS[item.badge] ?? 'badge-course'}`}>{item.badge}</span>
+        <span className={`badge-top ${BADGE_CLS[item.badge] ?? 'badge-course'}`}>{item.status === 'reserved' ? 'RESERVED' : item.status === 'sold' ? 'SOLD' : item.badge}</span>
         <button
           type="button"
           className={`heart-btn${item.isWishlisted ? ' liked' : ''}`}
@@ -107,12 +104,12 @@ function ListingCard({ item, index, onToggleWishlist, onOpenChat }) {
             <path d="M7 12S1 8 1 4.5a3 3 0 0 1 6 0 3 3 0 0 1 6 0C13 8 7 12 7 12z" />
           </svg>
         </button>
-        <span className="frosted-tag">{sub}</span>
+        <span className="frosted-tag">{sub}{item.images?.length > 1 ? ` • ${item.images.length} photos` : ''}</span>
       </div>
       <div className="card-body">
         <div className="price-row">
-          <span className="price">${item.price}</span>
-          {item.originalPrice != null && <span className="struck">${item.originalPrice} retail</span>}
+          <span className="price">{formatMoney(item.price, currency)}</span>
+          {item.originalPrice != null && <span className="struck">{formatMoney(item.originalPrice, currency)} retail</span>}
           {item.discount && (
             <span className="pill pill-mint" style={{ fontSize: 'calc(9*var(--u))', padding: 'calc(2*var(--u)) calc(7*var(--u))' }}>
               {item.discount}
@@ -140,40 +137,49 @@ function ListingCard({ item, index, onToggleWishlist, onOpenChat }) {
             <div className="seller-name">{sellerName} • {cls}</div>
             <div className="seller-sub">{hub}</div>
           </div>
-          <button type="button" className="chat-btn" title={`Message ${sellerName}`} onClick={() => onOpenChat(item)}>
-            <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 8.5a1.5 1.5 0 0 1-1.5 1.5H4L1 12V3.5A1.5 1.5 0 0 1 2.5 2h8A1.5 1.5 0 0 1 12 3.5v5z" />
-            </svg>
-          </button>
+
         </div>
+        {item.isOwner ? (
+          <div style={{ marginTop: 10, fontSize: 11, fontWeight: 700, color: 'var(--muted)', textAlign: 'center' }}>This is your listing</div>
+        ) : (
+          <button
+            type="button"
+            className="btn btn-primary btn-full"
+            style={{ marginTop: 10, opacity: unavailable ? 0.55 : 1 }}
+            disabled={unavailable}
+            onClick={() => onMakeOffer(item)}
+          >
+            {unavailable ? (item.status === 'sold' ? 'Sold' : 'Reserved') : 'Make an offer'}
+          </button>
+        )}
       </div>
     </div>
   );
 }
 
-export default function MarketplacePage({ listings, onToggleWishlist, onOpenChat, onNavigateToHubs }) {
+export default function MarketplacePage({ listings, stats, loading, error, onRetry, onToggleWishlist, onMakeOffer, onPostItem, onNavigateToHubs }) {
   const { campus } = useCampus();
   const [cat, setCat] = useState('all');
   const [sort, setSort] = useState('featured');
+  const [condition, setCondition] = useState('All Grades');
+  const [search, setSearch] = useState('');
   const [feedIdx, setFeedIdx] = useState(0);
   const [feedFade, setFeedFade] = useState(false);
 
-  const listingsCount = useCountUp(3420);
-  const handoffs = useCountUp(98);
+  const listingsCount = useCountUp(stats?.activeListings ?? 0);
+  const handoffs = useCountUp(stats?.completedHandoffs ?? 0);
+  const students = useCountUp(stats?.verifiedStudents ?? 0);
 
-  const lm = campus.landmarks;
-  const feed = [
-    `● Maya L. swapped Bio 1A Notes at ${lm[0]} (2m ago)`,
-    `● David K. sold Dorm Chair at ${lm[3]} Lounge (8m ago)`,
-    `● Sarah T. completed TI-84 handoff at ${lm[1]} (15m ago)`,
-  ];
+  // Live ticker built from the real latest listings.
+  const feed = listings.slice(0, 3).map((l) => `● ${l.seller.name} listed ${l.title} at ${l.meetupLocation}`);
+  if (feed.length === 0) feed.push('● No listings yet - be the first to post an item!');
 
   useEffect(() => {
     let swap;
     const timer = setInterval(() => {
       setFeedFade(true);
       swap = setTimeout(() => {
-        setFeedIdx((i) => (i + 1) % 3);
+        setFeedIdx((i) => i + 1);
         setFeedFade(false);
       }, 300);
     }, 4000);
@@ -185,10 +191,15 @@ export default function MarketplacePage({ listings, onToggleWishlist, onOpenChat
 
   const visible = useMemo(() => {
     let list = cat === 'all' ? listings : listings.filter((l) => (CAT_OF[l.category] ?? 'other') === cat);
+    if (condition !== 'All Grades') list = list.filter((l) => l.condition === condition);
+    if (search.trim()) {
+      const q = search.trim().toLowerCase();
+      list = list.filter((l) => [l.title, l.courseCode, l.desc, ...(l.tags || [])].some((f) => f && f.toLowerCase().includes(q)));
+    }
     if (sort === 'low') list = [...list].sort((a, b) => a.price - b.price);
     if (sort === 'high') list = [...list].sort((a, b) => b.price - a.price);
     return list;
-  }, [listings, cat, sort]);
+  }, [listings, cat, sort, condition, search]);
 
   return (
     <>
@@ -198,7 +209,7 @@ export default function MarketplacePage({ listings, onToggleWishlist, onOpenChat
             <div>
               <div style={{ marginBottom: 'calc(16*var(--u))' }}>
                 <span className="pill pill-mint">
-                  <ShieldIcon size={14} /> {campus.short} Verified Commons • Spring 2025
+                  <ShieldIcon size={14} /> {campus.short} Student Commons
                 </span>
               </div>
               <div className="hero-h1-wrap">
@@ -207,13 +218,13 @@ export default function MarketplacePage({ listings, onToggleWishlist, onOpenChat
                   <br />
                   with{' '}
                   <span style={{ color: 'var(--blue)', textDecorationLine: 'underline', textDecorationColor: '#6ee7b7', textDecorationThickness: 2, textUnderlineOffset: 4 }}>
-                    Verified Students
+                    Students
                   </span>
                   .
                 </h1>
               </div>
               <p className="hero-p">
-                No strangers, no shipping fees, no off-campus parking lot sketches. Exchange textbooks, tech, dorm essentials, and lab gear directly inside secured university zones.
+                No strangers, no shipping fees, no off-campus parking lot sketches. Exchange textbooks, tech, dorm essentials, and lab gear directly on campus.
               </p>
               <div className="stat-cards-row">
                 <div className="stat-card">
@@ -221,27 +232,27 @@ export default function MarketplacePage({ listings, onToggleWishlist, onOpenChat
                   <div className="stat-label">Active Listings</div>
                 </div>
                 <div className="stat-card">
-                  <div className="stat-num green">{handoffs}%</div>
-                  <div className="stat-label">On-Campus Hand-Offs</div>
+                  <div className="stat-num green">{handoffs.toLocaleString()}</div>
+                  <div className="stat-label">Completed Hand-Offs</div>
                 </div>
                 <div className="stat-card">
-                  <div className="stat-num">100% ✓</div>
-                  <div className="stat-label">.edu Verified Only</div>
+                  <div className="stat-num">{students.toLocaleString()} ✓</div>
+                  <div className="stat-label">Students</div>
                 </div>
               </div>
             </div>
 
             <div className="escrow-card">
               <div className="escrow-shield"><ShieldIcon size={24} /></div>
-              <div className="escrow-title">Campus Escrow &amp; Hold</div>
-              <div className="escrow-sub">Zero fee campus-protected handoffs</div>
+              <div className="escrow-title">Safe Campus Hand-Offs</div>
+              <div className="escrow-sub">Fellow students, in-person meetups</div>
               <span className="pill pill-mint" style={{ fontSize: 'calc(9.5*var(--u))' }}>● ACTIVE</span>
               <div className="live-feed">
                 <div className="live-feed-line" style={{ opacity: feedFade ? 0 : 1, transform: feedFade ? 'translateY(-8px)' : 'none' }}>
-                  {feed[feedIdx]}
+                  {feed[feedIdx % feed.length]}
                 </div>
               </div>
-              <div style={{ marginTop: 'calc(10*var(--u))', fontSize: 'calc(10.5*var(--u))', color: 'var(--muted)' }}>✱ Blue Light Stations mapped</div>
+              <div style={{ marginTop: 'calc(10*var(--u))', fontSize: 'calc(10.5*var(--u))', color: 'var(--muted)' }}>✱ Meet only at listed campus spots</div>
               <a
                 href="#verification"
                 style={{ fontSize: 'calc(11*var(--u))', fontWeight: 700, color: 'var(--blue)', display: 'block', marginTop: 'calc(6*var(--u))' }}
@@ -250,7 +261,7 @@ export default function MarketplacePage({ listings, onToggleWishlist, onOpenChat
                   onNavigateToHubs?.();
                 }}
               >
-                Explore Hubs →
+                Safe meetup spots →
               </a>
             </div>
           </div>
@@ -273,42 +284,64 @@ export default function MarketplacePage({ listings, onToggleWishlist, onOpenChat
             <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 6l2.5 2.5L10 3" /></svg>
             On-Campus Pickup Only
           </span>
-          <select className="filter-select" defaultValue="All Grades" aria-label="Condition">
+          <select className="filter-select" value={condition} onChange={(e) => setCondition(e.target.value)} aria-label="Condition">
             <option>All Grades</option>
+            <option>Brand New</option>
             <option>Like New</option>
             <option>Good</option>
-            <option>Acceptable</option>
+            <option>Fair (Usable)</option>
           </select>
-          <label className="filter-check">
-            <input type="checkbox" style={{ accentColor: 'var(--blue)' }} />
-            ⚡ Fast Responder (&lt; 15m)
-          </label>
+          <input
+            type="search"
+            className="filter-select"
+            placeholder="Search items…"
+            aria-label="Search items"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
           <span className="filter-label">
-            Showing {visible.length} {cat === 'all' ? 'featured student drops' : 'items in category'}
+            Showing {visible.length} {cat === 'all' ? 'student listings' : 'items in category'}
           </span>
           <select className="filter-select" value={sort} onChange={(e) => setSort(e.target.value)} aria-label="Sort">
-            <option value="featured">Featured &amp; Course Relevant</option>
+            <option value="featured">Newest first</option>
             <option value="low">Price: Low to High</option>
             <option value="high">Price: High to Low</option>
           </select>
         </div>
 
+        {loading && <div style={{ padding: '40px 0', textAlign: 'center', color: 'var(--muted)' }}>Loading listings…</div>}
+        {!loading && error && (
+          <div role="alert" style={{ padding: '24px', margin: '16px 0', textAlign: 'center', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 12, color: '#991b1b' }}>
+            <strong>Could not load listings.</strong> {error}
+            <div><button type="button" className="btn btn-primary" style={{ marginTop: 10 }} onClick={onRetry}>Try again</button></div>
+          </div>
+        )}
+        {!loading && !error && visible.length === 0 && (
+          <div style={{ padding: '48px 16px', textAlign: 'center', color: 'var(--muted)' }}>
+            <div style={{ fontSize: 16, fontWeight: 800, marginBottom: 6 }}>
+              {listings.length === 0 ? 'No items listed yet' : 'No items match your filters'}
+            </div>
+            {listings.length === 0 && (
+              <button type="button" className="btn btn-primary" onClick={onPostItem}>Post the first item</button>
+            )}
+          </div>
+        )}
         <div className="listing-grid">
           {visible.map((item, i) => (
-            <ListingCard key={item.id} item={item} index={i} onToggleWishlist={onToggleWishlist} onOpenChat={onOpenChat} />
+            <ListingCard key={item.id} item={item} index={i} currency={campus.currency} onToggleWishlist={onToggleWishlist} onMakeOffer={onMakeOffer} />
           ))}
         </div>
 
         <div className="safety-banner">
           <div className="safety-banner-text">
-            <span className="pill pill-dark" style={{ fontSize: 'calc(9*var(--u))', marginBottom: 'calc(14*var(--u))' }}>✱ CAMPUS POLICE VERIFIED SAFE ZONES</span>
+            <span className="pill pill-dark" style={{ fontSize: 'calc(9*var(--u))', marginBottom: 'calc(14*var(--u))' }}>✱ SAFE MEETUP SPOTS</span>
             <h2>Trade with total peace of mind.</h2>
             <p>
-              Always meet at designated Campus Safety Zones with blue-light monitoring, surveillance coverage, and staff presence. Never hand over cash in off-campus blindspots.
+              Always meet at a busy, well-lit spot on campus. Never go somewhere secluded, and check the item before you pay.
             </p>
             <div className="safety-banner-btns">
               <button type="button" className="btn" style={{ background: '#fff', color: 'var(--blue)' }} onClick={onNavigateToHubs}>
-                View 14 Verified Hubs
+                Safe meetup spots
               </button>
               <button type="button" className="btn btn-ghost">Safety Checklist</button>
             </div>
